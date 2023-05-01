@@ -3,25 +3,48 @@ package com.example.fyp;
 import static com.example.fyp.CalendarUtils.daysToWeekArray;
 import static com.example.fyp.CalendarUtils.monthYearFromDate;
 
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.view.Menu;
+
+import com.bumptech.glide.Glide;
+import com.example.fyp.R;
+
+
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import android.app.Activity;
-import android.content.Intent;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -33,22 +56,28 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
     static final int REQUEST_CODE = 1;
     private ListView listView;
     private BreakfastListAdapter breakfastAdapter;
-    private ArrayList<BreakfastItem> breakfastItems;
+    public static ArrayList<BreakfastItem> breakfastItems = new ArrayList<>();
     public static WeekViewActivity currentInstance = null;
     private FirebaseManager firebaseManager;
+    private static final String API_KEY = "73e06ad04f4744af8036ab3d70c203ea";
     private HashMap<LocalDate, ArrayList<BreakfastItem>> breakfastsMap;
+    private Context context;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        context = this;
         firebaseManager = new FirebaseManager();
         setContentView(R.layout.activity_week_view);
         initWidgets();
         listView = findViewById(R.id.breakfastList);
-        breakfastItems = new ArrayList<>(); // Initialize the breakfastItems
+        breakfastItems = new ArrayList<>();// Initialize the breakfastItems
         breakfastAdapter = new BreakfastListAdapter(this, breakfastItems);
         listView.setAdapter(breakfastAdapter);
         CalendarUtils.selectedDate = LocalDate.now();
+
+
         currentInstance = this;
         retrieveBreakfastData(); // retrieve breakfast data for all dates user has inputted breakfasts into
         updateBreakfastItemsList();
@@ -88,6 +117,7 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         startActivityForResult(intent, REQUEST_CODE);
     }
 
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -101,8 +131,6 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
             }
         }
     }
-
-
 
 
     public void addBreakfastToList(String recipe, String calories, String imageUrl) {
@@ -132,40 +160,9 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
             breakfastsList = new ArrayList<>();
         }
         breakfastItems.clear();
-        breakfastItems.addAll(breakfastsList); // Add this line to update the breakfastItems list
+        breakfastItems.addAll(breakfastsList); // this line to updates the breakfastItems list
         breakfastAdapter.notifyDataSetChanged();
         setWeekView();
-    }
-
-
-
-    private void updateMealList() {
-        String date = CalendarUtils.selectedDate.toString();
-        ValueEventListener mealsListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                ArrayList<BreakfastItem> breakfastsList = new ArrayList<>();
-                for (DataSnapshot mealSnapshot : dataSnapshot.getChildren()) {
-                    String meal = mealSnapshot.getValue(String.class);
-                    // Recipe and calories stored together in firebase
-                    String[] parts = meal.split(" \\("); // Split recipe and calories
-                    String recipe = parts[0];
-                    String calories = parts[1].substring(0, parts[1].length() - 1); // Remove the closing parenthesis
-
-                    BreakfastItem item = new BreakfastItem(recipe, "https://your-image-url.com", calories);
-                    breakfastsList.add(item);
-                }
-                // Add breakfastsList to the corresponding date in breakfastsMap
-                breakfastsMap.put(CalendarUtils.selectedDate, breakfastsList);
-                breakfastAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-        firebaseManager.getMealsForDate(date, mealsListener);
     }
 
     private void retrieveBreakfastData() {
@@ -221,7 +218,6 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
     }
 
 
-
     private void updateBreakfastItemsList() {
         ArrayList<BreakfastItem> breakfastsList = breakfastsMap.get(CalendarUtils.selectedDate);
         if (breakfastsList == null) {
@@ -232,6 +228,13 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         breakfastAdapter.notifyDataSetChanged();
     }
 
+    public void logout(View view) {
+        FirebaseAuth.getInstance().signOut(); // Sign out the user
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK); // Clear the activity stack
+        startActivity(intent);
+        finish(); // Finish the current activity
+    }
 
 
 }

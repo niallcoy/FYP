@@ -10,6 +10,9 @@ public class BreakfastItem {
         this.imageUrl = imageUrl;
         this.calories = calories;
     }
+    public String getRecipe() {
+        return title;
+    }
 
     public String getTitle() {
         return title;
@@ -23,4 +26,6 @@ public class BreakfastItem {
         return calories;
     }
 }
+
+
 

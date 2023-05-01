@@ -25,21 +25,31 @@ public class BreakfastListAdapter extends ArrayAdapter<BreakfastItem> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(R.layout.breakfast_item, parent, false);
+            convertView = LayoutInflater.from(context).inflate(R.layout.breakfast_recipe_item, parent, false);
         }
 
         BreakfastItem breakfastItem = getItem(position);
 
-        ImageView breakfastImage = convertView.findViewById(R.id.breakfast_image);
-        TextView breakfastTitle = convertView.findViewById(R.id.breakfast_title);
-        TextView breakfastCalories = convertView.findViewById(R.id.breakfast_calories);
+        ImageView breakfastImage = convertView.findViewById(R.id.recipe_image);
+        TextView breakfastTitle = convertView.findViewById(R.id.recipe_title);
+        // TextView breakfastCalories = convertView.findViewById(R.id.recipe_calories);
 
         breakfastTitle.setText(breakfastItem.getTitle());
-        breakfastCalories.setText(breakfastItem.getCalories());
+        //breakfastCalories.setText(breakfastItem.getCalories());
         Glide.with(context).load(breakfastItem.getImageUrl()).into(breakfastImage);
+
+        convertView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Pass the selected recipe and calories back to the WeekViewActivity
+                WeekViewActivity activity = (WeekViewActivity) context;
+                activity.addBreakfastToList(breakfastItem.getTitle(), breakfastItem.getCalories(), breakfastItem.getImageUrl());
+            }
+        });
 
         return convertView;
     }
+
     public void setBreakfastItems(List<BreakfastItem> breakfastItems) {
         this.breakfastItems = breakfastItems;
         notifyDataSetChanged();

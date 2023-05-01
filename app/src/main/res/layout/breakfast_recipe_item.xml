@@ -13,15 +13,29 @@
         android:scaleType="centerCrop"
         app:srcCompat="@drawable/ic_launcher_background" />
 
-    <TextView
-        android:id="@+id/recipe_title"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
         android:layout_marginStart="8dp"
         android:layout_weight="1"
-        android:text="Recipe Title"
-        android:textColor="@android:color/black"
-        android:textSize="16sp" />
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/recipe_title"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:text="Recipe Title"
+            android:textColor="@android:color/black"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/recipe_calories"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Recipe Calories"
+            android:textColor="@android:color/black"
+            android:textSize="16sp" />
+
+    </LinearLayout>
 
 </LinearLayout>

@@ -8,16 +8,30 @@
     android:orientation="vertical"
     tools:context=".WeekViewActivity"
     >
+
     <Button
+        android:id="@+id/logoutButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@null"
+        android:onClick="logout"
+        android:text="Log out"
+        android:textColor="@color/blue"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <Button
+
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:background="@null"
+        android:onClick="MonthlyAction"
         android:text="Your Weeks Plan"
         android:textColor="@color/blue"
-        android:background="@null"
-        android:textStyle="bold"
-        android:onClick="MonthlyAction"
-        android:textSize="20sp"/>
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -179,6 +193,8 @@
         android:layout_width="match_parent"
         android:layout_height="66dp"
         android:layout_weight="1" />
+
+
 
 
 </LinearLayout>

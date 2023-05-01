@@ -57,21 +57,24 @@ public class BreakfastRecipesListActivity extends AppCompatActivity implements R
             String title = recipe.getString("title");
             String id = recipe.getString("id");
             String imageUrl = recipe.getString("image");
+            String calories = recipe.getString( "calories");
 
             SpoonacularService spoonacularService = new SpoonacularService(this);
             spoonacularService.getRecipeDetails(Integer.parseInt(id), new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
                     try {
-                        JSONObject nutrition = response.getJSONObject("nutrition");
-                        JSONArray nutrients = nutrition.getJSONArray("nutrients");
                         String calories = "Unknown";
+                        if (response.has("nutrition")) {
+                            JSONObject nutrition = response.getJSONObject("nutrition");
+                            JSONArray nutrients = nutrition.getJSONArray("nutrients");
 
-                        for (int i = 0; i < nutrients.length(); i++) {
-                            JSONObject nutrient = nutrients.getJSONObject(i);
-                            if (nutrient.getString("title").equals("Calories")) {
-                                calories = nutrient.getString("amount");
-                                break;
+                            for (int i = 0; i < nutrients.length(); i++) {
+                                JSONObject nutrient = nutrients.getJSONObject(i);
+                                if (nutrient.getString("title").equals("Calories")) {
+                                    calories = nutrient.getString("amount");
+                                    break;
+                                }
                             }
                         }
 
@@ -79,7 +82,7 @@ public class BreakfastRecipesListActivity extends AppCompatActivity implements R
 
                         Intent resultIntent = new Intent();
                         resultIntent.putExtra("selectedRecipe", title);
-                        resultIntent.putExtra("selectedCalories", calories);
+                        //resultIntent.putExtra("selectedCalories", calories);
                         resultIntent.putExtra("selectedImageUrl", imageUrl);
                         setResult(Activity.RESULT_OK, resultIntent);
                         finish();
@@ -99,6 +102,7 @@ public class BreakfastRecipesListActivity extends AppCompatActivity implements R
             e.printStackTrace();
         }
     }
+
 
 
 

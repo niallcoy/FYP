@@ -12,6 +12,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -23,6 +24,9 @@ import com.android.volley.VolleyError;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BreakfastPopup extends AppCompatActivity {
     private EditText editTextMinCalories;
@@ -44,17 +48,35 @@ public class BreakfastPopup extends AppCompatActivity {
                     public void onActivityResult(ActivityResult result) {
                         if (result.getResultCode() == Activity.RESULT_OK) {
                             Intent data = result.getData();
-                            String selectedRecipe = data.getStringExtra("selectedRecipe");
-                            String selectedCalories = data.getStringExtra("selectedCalories");
-                            String selectedImageUrl = data.getStringExtra("selectedImageUrl");
-                            // Pass the selected recipe and calories back to the WeekViewActivity
-                            Intent intent = new Intent();
-                            intent.putExtra("selectedRecipe", selectedRecipe);
-                            intent.putExtra("selectedCalories", selectedCalories);
-                            intent.putExtra("selectedImageUrl", selectedImageUrl);
+                            String recipeUrl = data.getStringExtra("recipeUrl"); // pass the recipeUrl from BreakfastRecipesListActivity
 
-                            setResult(Activity.RESULT_OK, intent);
-                            finish();
+
+                            SpoonacularService spoonacularService = new SpoonacularService(BreakfastPopup.this);
+                            spoonacularService.getRecipeDetailsByExtract(recipeUrl, new Response.Listener<JSONObject>() {
+                                @Override
+                                public void onResponse(JSONObject response) {
+                                    try {
+                                        String title = response.getString("title");
+                                        String imageUrl = response.getString("image");
+                                        String calories = response.getString("calories"); // Default value when nutrition information is not available
+
+                                        Intent intent = new Intent();
+                                        intent.putExtra("selectedRecipe", title);
+                                        intent.putExtra("selectedCalories", calories);
+                                        intent.putExtra("selectedImageUrl", imageUrl);
+                                        setResult(Activity.RESULT_OK, intent);
+                                        finish();
+
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }, new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    // Handle error
+                                }
+                            });
                         }
                     }
                 }
@@ -93,12 +115,15 @@ public class BreakfastPopup extends AppCompatActivity {
         SpoonacularService spoonacularService = new SpoonacularService(this);
 
         spoonacularService.searchRecipesByCalories(minCalories, maxCalories,
-                new Response.Listener<JSONObject>() {
-                    public void onResponse(JSONObject response) {
+                new Response.Listener<JSONArray>() {
+                    public void onResponse(JSONArray response) {
                         // Handle the API response
-                        JSONArray recipes = null;
+                        List<JSONObject> recipes = new ArrayList<>();
                         try {
-                            recipes = response.getJSONArray("results");
+                            for (int i = 0; i < response.length(); i++) {
+                                JSONObject recipe = response.getJSONObject(i);
+                                recipes.add(recipe);
+                            }
                             Intent intent = new Intent(BreakfastPopup.this, BreakfastRecipesListActivity.class);
                             // Pass the WeekViewActivity instance to BreakfastRecipesListActivity
                             intent.putExtra("recipes", recipes.toString());
@@ -117,4 +142,6 @@ public class BreakfastPopup extends AppCompatActivity {
                 }
         );
     }
+
+
 }
