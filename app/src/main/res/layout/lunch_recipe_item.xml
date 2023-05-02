@@ -7,7 +7,7 @@
     android:padding="8dp">
 
     <ImageView
-        android:id="@+id/breakfast_recipe_image"
+        android:id="@+id/lunch_recipe_image"
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:scaleType="centerCrop"
@@ -21,7 +21,7 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/breakfast_recipe_title"
+            android:id="@+id/lunch_recipe_title"
             android:layout_width="match_parent"
             android:layout_height="42dp"
             android:text="Recipe Title"
@@ -29,7 +29,7 @@
             android:textSize="16sp" />
 
         <TextView
-            android:id="@+id/breakfast_recipe_calories"
+            android:id="@+id/lunch_recipe_calories"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Recipe Calories"

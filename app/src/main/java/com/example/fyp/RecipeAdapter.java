@@ -21,7 +21,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
     private JSONArray recipesArray;
     private Context context;
     private OnRecipeClickListener onRecipeClickListener;
-    private OnRecipeClickListener mListener;
 
     public RecipeAdapter(JSONArray recipesArray, Context context, OnRecipeClickListener listener) {
         this.recipesArray = recipesArray;
@@ -33,7 +32,14 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.breakfast_recipe_item, parent, false);
+        View view;
+        if (context instanceof BreakfastRecipesListActivity) {
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.breakfast_recipe_item, parent, false);
+        } else if (context instanceof LunchRecipesListActivity) {
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.lunch_recipe_item, parent, false);
+        } else {
+            throw new IllegalStateException("Invalid context provided for RecipeAdapter");
+        }
         return new ViewHolder(view, onRecipeClickListener);
     }
 
@@ -68,23 +74,39 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
 
         public ViewHolder(@NonNull View itemView, OnRecipeClickListener onRecipeClickListener) {
             super(itemView);
-            recipeImage = itemView.findViewById(R.id.recipe_image);
-            recipeTitle = itemView.findViewById(R.id.recipe_title);
-            recipeCalories = itemView.findViewById(R.id.recipe_calories);
+            if (itemView.findViewById(R.id.breakfast_recipe_image) != null) {
+                recipeImage = itemView.findViewById(R.id.breakfast_recipe_image);
+                recipeTitle = itemView.findViewById(R.id.breakfast_recipe_title);
+                recipeCalories = itemView.findViewById(R.id.breakfast_recipe_calories);
+            } else if (itemView.findViewById(R.id.lunch_recipe_image) != null) {
+                recipeImage = itemView.findViewById(R.id.lunch_recipe_image);
+                recipeTitle = itemView.findViewById(R.id.lunch_recipe_title);
+                recipeCalories = itemView.findViewById(R.id.lunch_recipe_calories);
+            } else {
+                throw new IllegalStateException("Invalid layout provided for ViewHolder");
+            }
             this.onRecipeClickListener = onRecipeClickListener;
             itemView.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View view) {
-            onRecipeClickListener.onRecipeClick(getAdapterPosition());
+            try {
+                JSONObject recipe = recipesArray.getJSONObject(getAdapterPosition());
+                String title = recipe.getString("title");
+                String imageUrl = recipe.optString("image", "");
+                String calories = recipe.optString("calories", "N/A");
+                onRecipeClickListener.onRecipeClick(getAdapterPosition(), title, calories, imageUrl);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
+
     }
 
     public interface OnRecipeClickListener {
         void onRecipeClick(int position);
+        void onRecipeClick(int position, String title, String calories, String imageUrl);
     }
-    public void setOnRecipeClickListener(OnRecipeClickListener listener) {
-        mListener = listener;
-    }
+
 }

@@ -1,11 +1,12 @@
+
 package com.example.fyp;
 
-public class BreakfastItem {
+public class LunchItem {
     private String title;
     private String imageUrl;
     private String calories;
 
-    public BreakfastItem( String title, String imageUrl, String calories) {
+    public LunchItem( String title, String imageUrl, String calories) {
 
         this.title = title;
         this.imageUrl = imageUrl;

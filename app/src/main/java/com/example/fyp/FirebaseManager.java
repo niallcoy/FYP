@@ -10,6 +10,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.HashMap;
 
 public class FirebaseManager {
     private FirebaseAuth mAuth;
@@ -24,42 +25,42 @@ public class FirebaseManager {
         return mAuth.getCurrentUser();
     }
 
-    public void saveBreakfastForUser(String date, String meal) {
+    public void saveBreakfastForUser(String date, String recipe, String imageUrl, String calories) {
         String userId = getCurrentUser().getUid();
         DatabaseReference mealsRef = mDatabase.child("Users").child(userId).child("meals");
-        mealsRef.child(date).child("breakfast").setValue(meal);
+
+        HashMap<String, String> mealData = new HashMap<>();
+        mealData.put("recipe", recipe);
+        mealData.put("imageUrl", imageUrl);
+        mealData.put("calories", calories);
+
+        mealsRef.child(date).child("breakfast").setValue(mealData);
     }
 
-    public void getMealsForDate(String date, ValueEventListener listener) {
+    public void deleteBreakfastFromUser(String date, String recipe) {
+        String userId = mAuth.getCurrentUser().getUid();
+        DatabaseReference breakfastRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+                .child("meals").child(date).child("breakfast").child(recipe.replace(".", "-"));
+        breakfastRef.removeValue();
+    }
+
+
+    public void saveLunchForUser(String date, String recipe, String imageUrl, String calories) {
         String userId = getCurrentUser().getUid();
-        DatabaseReference mealsRef = mDatabase.child("Users").child(userId).child("meals").child(date);
-        mealsRef.addListenerForSingleValueEvent(listener);
+        DatabaseReference mealsRef = mDatabase.child("Users").child(userId).child("meals");
+
+        HashMap<String, String> mealData = new HashMap<>();
+        mealData.put("recipe", recipe);
+        mealData.put("imageUrl", imageUrl);
+        mealData.put("calories", calories);
+
+        mealsRef.child(date).child("lunch").setValue(mealData);
     }
 
-    public void saveLunchForUser(String date, String lunch) {
-        String userId = getCurrentUser().getUid();
-        DatabaseReference mealsRef = FirebaseDatabase.getInstance().getReference("Users").child(userId).child("meals").child(date);
-        mealsRef.child("lunch").setValue(lunch);
+    public void deleteLunchFromUser(String date, String recipe) {
+        String userId = mAuth.getCurrentUser().getUid();
+        DatabaseReference breakfastRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+                .child("meals").child(date).child("lunch").child(recipe.replace(".", "-"));
+        breakfastRef.removeValue();
     }
-    public void deleteBreakfastForUser(String date, String breakfastItem) {
-        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(getCurrentUser().getUid());
-        DatabaseReference mealsRef = userRef.child("meals").child(date).child("breakfast");
-        mealsRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists() && snapshot.getValue(String.class).equals(breakfastItem)) {
-                    mealsRef.setValue(null); // Remove the breakfast item from Firebase
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                // Handle error
-            }
-        });
-    }
-
-
-
-
 }

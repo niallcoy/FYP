@@ -1,7 +1,9 @@
 package com.example.fyp;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
@@ -22,7 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SpoonacularService {
-    private static final String API_KEY = "58709f2e26494684b62805f5abfe6986";
+    private static final String API_KEY = "73e06ad04f4744af8036ab3d70c203ea";
     private Context context;
 
     public SpoonacularService(Context context) {
@@ -62,7 +64,19 @@ public class SpoonacularService {
         RequestQueue queue = Volley.newRequestQueue(context);
         queue.add(request);
     }
+    public void getAllLunchRecipes(Response.Listener<JSONArray> listener, Response.ErrorListener errorListener) {
+        String apiUrl = "https://api.spoonacular.com/recipes/complexSearch?apiKey=" + API_KEY + "&type=main course&addRecipeInformation=true";
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, apiUrl, null,
+                new Response.Listener<JSONArray>() {
+                    @Override
+                    public void onResponse(JSONArray response) {
+                        listener.onResponse(response);
+                    }
+                }, errorListener);
 
+        RequestQueue queue = Volley.newRequestQueue(context);
+        queue.add(request);
+    }
     public void searchRecipesByCalories(int minCalories, int maxCalories, Response.Listener<JSONArray> successListener, Response.ErrorListener errorListener) {
         String url = "https://api.spoonacular.com/recipes/findByNutrients?minCalories=" + minCalories + "&maxCalories=" + maxCalories + "&type=breakfast&apiKey=" + API_KEY;
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null, successListener, errorListener);
@@ -78,58 +92,30 @@ public class SpoonacularService {
         RequestQueue queue = Volley.newRequestQueue(context);
         queue.add(request);
     }
-    public void searchAndGetLunchDetailsByCalories(int minCalories, int maxCalories, final Response.Listener<JSONArray> successListener, Response.ErrorListener errorListener) {
-        String url = "https://api.spoonacular.com/recipes/findByNutrients?minCalories=" + minCalories + "&maxCalories=" + maxCalories + "&apiKey=" + API_KEY;
-        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
-            @Override
-            public void onResponse(JSONArray response) {
-                Log.d("API_RESPONSE", "Received recipes: " + response.toString());
-                JSONArray lunchDetailsArray = new JSONArray();
-                AtomicInteger counter = new AtomicInteger(response.length());
-                for (int i = 0; i < response.length(); i++) {
-                    JSONObject recipe = response.optJSONObject(i);
-                    if (recipe != null) {
-                        int id = recipe.optInt("id");
-                        if (id > 0) {
-                            getRecipeDetails(id, response1 -> {
-                                try {
-                                    int recipeId = response1.getInt("id");
-                                    String title = response1.getString("title");
-                                    String imageUrl = response1.optString("image", "");
-                                    String calories = response1.has("calories") ? response1.getString("calories") : "N/A";
+    public void searchAndGetLunchDetailsByCalories(int minCalories, int maxCalories, Response.Listener<JSONArray> listener, Response.ErrorListener errorListener) {
+        String apiUrl = "https://api.spoonacular.com/recipes/complexSearch?apiKey=" + API_KEY + "&minCalories=" + minCalories + "&maxCalories=" + maxCalories + "&number=10&type=main course&addRecipeInformation=true";
 
-                                    JSONArray ingredients = response1.getJSONArray("extendedIngredients");
-                                    String instructions = response1.getString("instructions");
-
-                                    JSONObject lunchDetails = new JSONObject();
-                                    lunchDetails.put("id", recipeId);
-                                    lunchDetails.put("title", title);
-                                    lunchDetails.put("imageUrl", imageUrl);
-                                    lunchDetails.put("calories", calories);
-                                    lunchDetails.put("ingredients", ingredients);
-                                    lunchDetails.put("instructions", instructions);
-                                    lunchDetailsArray.put(lunchDetails);
-
-                                    if (counter.decrementAndGet() == 0) {
-                                        successListener.onResponse(lunchDetailsArray);
-                                    }
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                            }, errorListener);
-                        } else {
-                            if (counter.decrementAndGet() == 0) {
-                                successListener.onResponse(lunchDetailsArray);
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, apiUrl, null,
+                new Response.Listener<JSONArray>() {
+                    @Override
+                    public void onResponse(JSONArray response) {
+                        JSONArray lunchRecipes = new JSONArray();
+                        try {
+                            for (int i = 0; i < response.length(); i++) {
+                                JSONObject recipe = response.getJSONObject(i);
+                                JSONObject lunchRecipe = new JSONObject();
+                                lunchRecipe.put("title", recipe.getString("title"));
+                                lunchRecipe.put("image", recipe.getString("image"));
+                                lunchRecipe.put("sourceUrl", recipe.getString("sourceUrl")); // Add the source URL
+                                lunchRecipes.put(lunchRecipe);
                             }
-                        }
-                    } else {
-                        if (counter.decrementAndGet() == 0) {
-                            successListener.onResponse(lunchDetailsArray);
+                            listener.onResponse(lunchRecipes);
+                        } catch (JSONException e) {
+                            errorListener.onErrorResponse(new VolleyError(e.getMessage()));
                         }
                     }
-                }
-            }
-        }, errorListener);
+                }, errorListener);
+
         RequestQueue queue = Volley.newRequestQueue(context);
         queue.add(request);
     }
@@ -137,10 +123,8 @@ public class SpoonacularService {
 
 
 
-    private void getLunchDetails(int id, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
-        String url = "https://api.spoonacular.com/recipes/" + id + "/information?apiKey=" + API_KEY;
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, listener, errorListener);
-        RequestQueue queue = Volley.newRequestQueue(context);
-        queue.add(request);
-    }
+
+
+
+
 }

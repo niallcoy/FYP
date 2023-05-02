@@ -7,34 +7,22 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.ContextMenu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import java.util.UUID;
+
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.view.Menu;
-
-import com.bumptech.glide.Glide;
-import com.example.fyp.R;
-
 
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -42,27 +30,25 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class WeekViewActivity extends AppCompatActivity implements CalendarAdapter.OnItemListener {
+public class WeekViewActivity extends AppCompatActivity implements CalendarAdapter.OnItemListener, AdapterView.OnItemLongClickListener {
     private TextView monthYearText;
     private RecyclerView calendarRecyclerView;
     static final int REQUEST_CODE = 1;
-    private ListView listView;
-    private BreakfastListAdapter breakfastAdapter;
+    private ListView breakfastListView;
+    private BreakfastListAdapter breakfastListAdapter;
     public static ArrayList<BreakfastItem> breakfastItems = new ArrayList<>();
+    private ListView lunchListView;
+    private LunchListAdapter lunchAdapter;
+    public static ArrayList<LunchItem> lunchItems = new ArrayList<>();
     public static WeekViewActivity currentInstance = null;
     private FirebaseManager firebaseManager;
-    private static final String API_KEY = "73e06ad04f4744af8036ab3d70c203ea";
     private HashMap<LocalDate, ArrayList<BreakfastItem>> breakfastsMap;
+    private HashMap<LocalDate, ArrayList<LunchItem>> lunchesMap;
     private Context context;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,16 +57,20 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         firebaseManager = new FirebaseManager();
         setContentView(R.layout.activity_week_view);
         initWidgets();
-        listView = findViewById(R.id.breakfastList);
-        breakfastItems = new ArrayList<>();// Initialize the breakfastItems
-        breakfastAdapter = new BreakfastListAdapter(this, breakfastItems);
-        listView.setAdapter(breakfastAdapter);
+        breakfastItems = new ArrayList<>(); // Initialize the breakfastItems
+        breakfastListAdapter = new BreakfastListAdapter(this, breakfastItems, firebaseManager);
+        breakfastListView.setAdapter(breakfastListAdapter);
+        lunchItems = new ArrayList<>(); // Initialize the lunchItems
+        lunchAdapter = new LunchListAdapter(this, lunchItems, firebaseManager);
+        lunchListView.setAdapter(lunchAdapter);
         CalendarUtils.selectedDate = LocalDate.now();
-
+        breakfastListView.setOnItemLongClickListener(this); // Set the OnItemLongClickListener for breakfasts
+        lunchListView.setOnItemLongClickListener(this); // Set the OnItemLongClickListener for lunches
 
         currentInstance = this;
-        retrieveBreakfastData(); // retrieve breakfast data for all dates user has inputted breakfasts into
+        retrieveMealData(); // Retrieve breakfast data for all dates user has inputted breakfasts into
         updateBreakfastItemsList();
+        updateLunchItemsList();
         setWeekView();
     }
 
@@ -96,8 +86,11 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
 
     private void initWidgets() {
         breakfastsMap = new HashMap<>();
-        calendarRecyclerView = findViewById(R.id.CalendarRecyclerView);
+        lunchesMap = new HashMap<>();
+        breakfastListView = findViewById(R.id.breakfastList);
+        lunchListView = findViewById(R.id.lunchList);
         monthYearText = findViewById(R.id.MonthYearTV);
+        calendarRecyclerView = findViewById(R.id.CalendarRecyclerView);
     }
 
     public void NextWeekAction(View view) {
@@ -117,9 +110,14 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         startActivityForResult(intent, REQUEST_CODE);
     }
 
+    public void NewLunch(View view) {
+        Intent intent = new Intent(this, LunchPopup.class);
+        startActivityForResult(intent, REQUEST_CODE);
+    }
+
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
@@ -136,7 +134,11 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
     public void addBreakfastToList(String recipe, String calories, String imageUrl) {
         String date = CalendarUtils.selectedDate.toString();
         String combined = recipe + "|" + imageUrl + "|(" + calories + ")";
-        firebaseManager.saveBreakfastForUser(date, combined);
+
+        // Generate a random UUID for the id
+        String id = UUID.randomUUID().toString();
+
+        firebaseManager.saveBreakfastForUser(date, recipe, imageUrl, calories); // Save the calorie value to Firebase database
         BreakfastItem item = new BreakfastItem(recipe, imageUrl, calories);
 
         // Add breakfast item to the corresponding list in breakfastsMap
@@ -146,7 +148,27 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
             breakfastsMap.put(CalendarUtils.selectedDate, breakfastsList);
         }
         breakfastsList.add(item);
-        breakfastAdapter.notifyDataSetChanged();
+        breakfastListAdapter.notifyDataSetChanged();
+    }
+
+    public void addLunchToList(String recipe, String calories, String imageUrl) {
+        String date = CalendarUtils.selectedDate.toString();
+        String combined = recipe + "|" + imageUrl + "|(" + calories + ")";
+
+        // Generate a random UUID for the id
+        String id = UUID.randomUUID().toString();
+
+        firebaseManager.saveLunchForUser(date, recipe, imageUrl, calories); // Save the calorie value to Firebase database
+        LunchItem item = new LunchItem(recipe, imageUrl, calories);
+
+        // Add lunch item to the corresponding list in lunchesMap
+        ArrayList<LunchItem> lunchesList = lunchesMap.get(CalendarUtils.selectedDate);
+        if (lunchesList == null) {
+            lunchesList = new ArrayList<>();
+            lunchesMap.put(CalendarUtils.selectedDate, lunchesList);
+        }
+        lunchesList.add(item);
+        lunchAdapter.notifyDataSetChanged();
     }
 
 
@@ -154,79 +176,128 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
     public void onItemClick(int position, LocalDate date) {
         CalendarUtils.selectedDate = date;
         Log.d("DEBUG", "onItemClick called");
+
         // Check if there are breakfasts for the selected date in breakfastsMap
         ArrayList<BreakfastItem> breakfastsList = breakfastsMap.get(date);
         if (breakfastsList == null) {
             breakfastsList = new ArrayList<>();
         }
         breakfastItems.clear();
-        breakfastItems.addAll(breakfastsList); // this line to updates the breakfastItems list
-        breakfastAdapter.notifyDataSetChanged();
+        breakfastItems.addAll(breakfastsList);
+
+        // Check if breakfastListAdapter is not null before calling notifyDataSetChanged()
+        if (breakfastListAdapter != null) {
+            breakfastListAdapter.notifyDataSetChanged();
+        }
+
+        // Check if there are lunches for the selected date in lunchesMap
+        ArrayList<LunchItem> lunchesList = lunchesMap.get(date);
+        if (lunchesList == null) {
+            lunchesList = new ArrayList<>();
+        }
+        lunchItems.clear();
+        lunchItems.addAll(lunchesList);
+        lunchAdapter.notifyDataSetChanged();
+
         setWeekView();
     }
 
-    private void retrieveBreakfastData() {
+
+    private void retrieveMealData() {
         String userId = firebaseManager.getCurrentUser().getUid();
         DatabaseReference mealsRef = FirebaseDatabase.getInstance().getReference("Users").child(userId).child("meals");
 
         mealsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Log.d("FIREBASE", "Retrieving breakfast data");
+                Log.d("FIREBASE", "Retrieving meal data");
                 for (DataSnapshot dateSnapshot : snapshot.getChildren()) {
                     String date = dateSnapshot.getKey();
+
+                    // Retrieve breakfast data
                     DataSnapshot breakfastSnapshot = dateSnapshot.child("breakfast");
                     if (breakfastSnapshot.exists()) {
-                        String meal = breakfastSnapshot.getValue(String.class);
-                        Log.d("FIREBASE", "Retrieved breakfast data for date " + date + ": " + meal);
+                        try {
+                            String recipe = breakfastSnapshot.child("recipe").getValue(String.class);
+                            String imageUrl = breakfastSnapshot.child("imageUrl").getValue(String.class);
+                            String calories = breakfastSnapshot.child("calories").getValue(String.class);
 
-                        // Recipe, imageUrl, and calories stored together in firebase
-                        String[] parts = meal.split("\\|\\("); // Use the delimiter to split the string
-                        if (parts.length < 2) {
-                            Log.e("DEBUG", "Invalid meal data format: " + meal);
-                            continue;
+                            // Create a BreakfastItem object and add it to the corresponding list in breakfastsMap
+                            BreakfastItem item = new BreakfastItem(recipe, imageUrl, calories);
+                            LocalDate localDate = LocalDate.parse(date);
+                            ArrayList<BreakfastItem> breakfastsList = breakfastsMap.get(localDate);
+                            if (breakfastsList == null) {
+                                breakfastsList = new ArrayList<>();
+                                breakfastsMap.put(localDate, breakfastsList);
+                            }
+                            breakfastsList.add(item);
+                        } catch (ClassCastException e) {
+                            Log.e("DEBUG", "Invalid breakfast data format: " + breakfastSnapshot.getValue());
                         }
-                        String[] recipeAndImageUrl = parts[0].split("\\|"); // Split the recipe and imageUrl
-                        if (recipeAndImageUrl.length < 2) {
-                            Log.e("DEBUG", "Invalid meal data format: " + meal);
-                            continue;
-                        }
-                        String recipe = recipeAndImageUrl[0];
-                        String imageUrl = recipeAndImageUrl[1]; // Retrieve imageUrl
-                        String calories = parts[1].substring(0, parts[1].length() - 1); // Remove the closing parenthesis
+                    }
 
-                        BreakfastItem item = new BreakfastItem(recipe, imageUrl, calories);
-                        LocalDate localDate = LocalDate.parse(date);
-                        ArrayList<BreakfastItem> breakfastsList = breakfastsMap.get(localDate);
-                        if (breakfastsList == null) {
-                            breakfastsList = new ArrayList<>();
-                            breakfastsMap.put(localDate, breakfastsList);
+                    // Retrieve lunch data
+                    DataSnapshot lunchSnapshot = dateSnapshot.child("lunch");
+                    if (lunchSnapshot.exists()) {
+                        try {
+                            String recipe = lunchSnapshot.child("recipe").getValue(String.class);
+                            String imageUrl = lunchSnapshot.child("imageUrl").getValue(String.class);
+                            String calories = lunchSnapshot.child("calories").getValue(String.class);
+
+                            // Create a LunchItem object and add it to the corresponding list in lunchesMap
+                            LunchItem item = new LunchItem(recipe, imageUrl, calories);
+                            LocalDate localDate = LocalDate.parse(date);
+                            ArrayList<LunchItem> lunchesList = lunchesMap.get(localDate);
+                            if (lunchesList == null) {
+                                lunchesList = new ArrayList<>();
+                                lunchesMap.put(localDate, lunchesList);
+                            }
+                            lunchesList.add(item);
+                        } catch (ClassCastException e) {
+                            Log.e("DEBUG", "Invalid lunch data format: " + lunchSnapshot.getValue());
                         }
-                        breakfastsList.add(item);
-                        breakfastAdapter.notifyDataSetChanged();
                     }
                 }
-                updateBreakfastItemsList(); // Add this line to update the breakfastItems list
-                setWeekView(); // update the calendar view with the retrieved data
+                updateBreakfastItemsList(); // Update the breakfastItems list
+                updateLunchItemsList(); // Update the lunchItems list
+                setWeekView(); // Update the calendar view with the retrieved data
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // handle error
+                // Handle error
             }
         });
     }
 
 
-    private void updateBreakfastItemsList() {
-        ArrayList<BreakfastItem> breakfastsList = breakfastsMap.get(CalendarUtils.selectedDate);
-        if (breakfastsList == null) {
-            breakfastsList = new ArrayList<>();
+    public void updateBreakfastItemsList() {
+        if (breakfastsMap != null) {
+            ArrayList<BreakfastItem> breakfasts = breakfastsMap.get(CalendarUtils.selectedDate);
+            if (breakfasts != null) {
+                breakfastItems.clear();
+                breakfastItems.addAll(breakfasts);
+                breakfastListAdapter.notifyDataSetChanged(); // Notify the adapter of the data change
+            } else {
+                breakfastItems.clear();
+                breakfastListAdapter.notifyDataSetChanged(); // Notify the adapter of the data change
+            }
+        } else {
+            breakfastItems.clear();
+            breakfastListAdapter.notifyDataSetChanged(); // Notify the adapter of the data change
         }
-        breakfastItems.clear();
-        breakfastItems.addAll(breakfastsList);
-        breakfastAdapter.notifyDataSetChanged();
     }
+
+    private void updateLunchItemsList() {
+        ArrayList<LunchItem> lunchesList = lunchesMap.get(CalendarUtils.selectedDate);
+        if (lunchesList == null) {
+            lunchesList = new ArrayList<>();
+        }
+        lunchItems.clear();
+        lunchItems.addAll(lunchesList);
+        lunchAdapter.notifyDataSetChanged();
+    }
+
 
     public void logout(View view) {
         FirebaseAuth.getInstance().signOut(); // Sign out the user
@@ -236,5 +307,86 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         finish(); // Finish the current activity
     }
 
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        String userId = firebaseManager.getCurrentUser().getUid();
 
+        // Determine whether a breakfast or lunch item was clicked based on the parent ListView
+        if (parent.getId() == R.id.breakfastList) {
+            // Get the clicked breakfast item
+            BreakfastItem item = breakfastItems.get(position);
+
+            // Get the date of the clicked item
+            LocalDate date = CalendarUtils.selectedDate;
+
+            // Get the Firebase reference to the corresponding breakfast item
+            DatabaseReference breakfastRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+                    .child("meals").child(date.toString()).child("breakfast").child(item.getRecipe());
+
+            breakfastRef.removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void unused) {
+                    Toast.makeText(context, "Breakfast item deleted", Toast.LENGTH_SHORT).show();
+                    firebaseManager.deleteBreakfastFromUser(date.toString(), item.getRecipe()); // Remove the breakfast item from the user's meals list in Firebase
+                    Log.d("FIREBASE", "Breakfast item deleted successfully");
+
+                    // Remove the breakfast item from the corresponding list in breakfastsMap
+                    ArrayList<BreakfastItem> breakfastsList = breakfastsMap.get(date);
+                    if (breakfastsList != null) {
+                        if (breakfastsList.remove(item)) { // Check if the item was removed from the list
+                            if (breakfastsList.isEmpty()) {
+                                breakfastsMap.remove(date);
+                            }
+                            breakfastItems.remove(position); // Remove the clicked breakfast item from the list and notify the adapter
+                            breakfastListAdapter.notifyDataSetChanged();
+                        } else {
+                            // The item was not found in the list, so do nothing
+                        }
+                    }
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(context, "Failed to delete breakfast item", Toast.LENGTH_SHORT).show();
+                    Log.e("FIREBASE", "Error deleting breakfast item", e);
+                }
+            });
+
+        } else if (parent.getId() == R.id.lunchList) {
+            // Get the clicked lunch item
+            LunchItem item = lunchItems.get(position);
+
+            // Get the date of the clicked item
+            LocalDate date = CalendarUtils.selectedDate;
+
+            // Get the Firebase reference to the corresponding lunch item
+            DatabaseReference lunchRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+                    .child("meals").child(date.toString()).child("lunch").child(item.getRecipe());
+
+            lunchRef.removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void unused) {
+                    Toast.makeText(context, "Lunch item deleted", Toast.LENGTH_SHORT).show();
+                    firebaseManager.deleteLunchFromUser(date.toString(), item.getRecipe()); // Remove the lunch item from the user's meals list in Firebase
+                    Log.d("FIREBASE", "Lunch item deleted successfully");
+
+                    // Remove the lunch item from the corresponding list in lunchesMap
+                    ArrayList<LunchItem> lunchesList = lunchesMap.get(date);
+                    if (lunchesList != null) {
+                        if (lunchesList.remove(item)) { // Check if the item was removed from the list
+                            if (lunchesList.isEmpty()) {
+                                lunchesMap.remove(date);
+                            }
+                            lunchItems.remove(position); // Remove the clicked lunch item from the list and notify the adapter
+                            lunchAdapter.notifyDataSetChanged();
+                        }
+
+                    }
+
+                }
+            });
+        }
+        return true;
+    }
 }
+

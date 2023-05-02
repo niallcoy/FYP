@@ -1,7 +1,5 @@
 package com.example.fyp;
 
-
-
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -11,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -26,30 +25,29 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BreakfastPopup extends AppCompatActivity {
+public class LunchPopup extends AppCompatActivity {
     private EditText editTextMinCalories;
     private EditText editTextMaxCalories;
-    private ActivityResultLauncher<Intent> breakfastRecipesLauncher;
+    private ActivityResultLauncher<Intent> lunchRecipesLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_breakfast_popup);
+        setContentView(R.layout.activity_lunch_popup);
 
         editTextMinCalories = findViewById(R.id.lunchEditTextMinCalories);
         editTextMaxCalories = findViewById(R.id.lunchEditTextMaxCalories);
 
-        breakfastRecipesLauncher = registerForActivityResult(
+        lunchRecipesLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
                     @Override
                     public void onActivityResult(ActivityResult result) {
                         if (result.getResultCode() == Activity.RESULT_OK) {
                             Intent data = result.getData();
-                            String recipeUrl = data.getStringExtra("recipeUrl"); // pass the recipeUrl from BreakfastRecipesListActivity
+                            String recipeUrl = data.getStringExtra("recipeUrl"); // pass the recipeUrl from LunchRecipesListActivity
 
-
-                            SpoonacularService spoonacularService = new SpoonacularService(BreakfastPopup.this);
+                            SpoonacularService spoonacularService = new SpoonacularService(LunchPopup.this);
                             spoonacularService.getRecipeDetailsByExtract(recipeUrl, new Response.Listener<JSONObject>() {
                                 @Override
                                 public void onResponse(JSONObject response) {
@@ -88,7 +86,7 @@ public class BreakfastPopup extends AppCompatActivity {
                 String minCaloriesString = editTextMinCalories.getText().toString();
                 String maxCaloriesString = editTextMaxCalories.getText().toString();
                 if (minCaloriesString.isEmpty() || maxCaloriesString.isEmpty()) {
-                    Toast.makeText(BreakfastPopup.this, "Please enter both minimum and maximum calories", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LunchPopup.this, "Please enter both minimum and maximum calories", Toast.LENGTH_SHORT).show();
                 } else {
                     int minCalories = Integer.parseInt(minCaloriesString);
                     int maxCalories = Integer.parseInt(maxCaloriesString);
@@ -97,6 +95,7 @@ public class BreakfastPopup extends AppCompatActivity {
                 }
             }
         });
+
 
         // Set the OnClickListener for the "Cancel" button
         Button buttonCancel = findViewById(R.id.cancel);
@@ -115,31 +114,29 @@ public class BreakfastPopup extends AppCompatActivity {
         spoonacularService.searchRecipesByCalories(minCalories, maxCalories,
                 new Response.Listener<JSONArray>() {
                     public void onResponse(JSONArray response) {
+                        // Log the API response
+                        Log.d("LunchPopup", "API Response: " + response.toString());
+
                         // Handle the API response
-                        List<JSONObject> recipes = new ArrayList<>();
-                        try {
-                            for (int i = 0; i < response.length(); i++) {
-                                JSONObject recipe = response.getJSONObject(i);
-                                recipes.add(recipe);
-                            }
-                            Intent intent = new Intent(BreakfastPopup.this, BreakfastRecipesListActivity.class);
-                            // Pass the WeekViewActivity instance to BreakfastRecipesListActivity
-                            intent.putExtra("recipes", recipes.toString());
-                            breakfastRecipesLauncher.launch(intent);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
+                        Intent intent = new Intent(LunchPopup.this, LunchRecipesListActivity.class);
+                        // Pass the list of lunch recipes to LunchRecipesListActivity
+                        intent.putExtra("recipes", response.toString());
+                        lunchRecipesLauncher.launch(intent);
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
+                        // Log the error message
+                        Log.e("LunchPopup", "Error fetching recipes: " + error.getMessage());
+
                         // Handle the error
-                        Toast.makeText(BreakfastPopup.this, "Error fetching recipes: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LunchPopup.this, "Error fetching recipes: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 }
         );
     }
+
 
 
 }
