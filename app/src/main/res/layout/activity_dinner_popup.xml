@@ -9,19 +9,19 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter Enter the calorie range you would like for breakfast:"
+        android:text="Enter the calorie range you would like for dinner:"
         android:textColor="@color/black"
         android:textSize="20sp" />
 
     <EditText
-        android:id="@+id/breakfastEditTextMinCalories"
+        android:id="@+id/dinnerEditTextMinCalories"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Minimum Calories"
         android:textColorHint="@color/black"
         android:inputType="number" />
     <EditText
-        android:id="@+id/breakfastEditTextMaxCalories"
+        android:id="@+id/dinnerEditTextMaxCalories"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Maximum Calories"

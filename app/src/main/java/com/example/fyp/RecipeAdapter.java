@@ -26,8 +26,8 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
         this.recipesArray = recipesArray;
         this.context = context;
         this.onRecipeClickListener = listener;
-
     }
+
 
     @NonNull
     @Override
@@ -37,11 +37,14 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
             view = LayoutInflater.from(parent.getContext()).inflate(R.layout.breakfast_recipe_item, parent, false);
         } else if (context instanceof LunchRecipesListActivity) {
             view = LayoutInflater.from(parent.getContext()).inflate(R.layout.lunch_recipe_item, parent, false);
+        } else if (context instanceof DinnerRecipesListActivity) {
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.dinner_recipe_item, parent, false);
         } else {
             throw new IllegalStateException("Invalid context provided for RecipeAdapter");
         }
         return new ViewHolder(view, onRecipeClickListener);
     }
+
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
@@ -82,12 +85,17 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
                 recipeImage = itemView.findViewById(R.id.lunch_recipe_image);
                 recipeTitle = itemView.findViewById(R.id.lunch_recipe_title);
                 recipeCalories = itemView.findViewById(R.id.lunch_recipe_calories);
+            } else if (itemView.findViewById(R.id.dinner_recipe_image) != null) {
+                recipeImage = itemView.findViewById(R.id.dinner_recipe_image);
+                recipeTitle = itemView.findViewById(R.id.dinner_recipe_title);
+                recipeCalories = itemView.findViewById(R.id.dinner_recipe_calories);
             } else {
                 throw new IllegalStateException("Invalid layout provided for ViewHolder");
             }
             this.onRecipeClickListener = onRecipeClickListener;
             itemView.setOnClickListener(this);
         }
+
 
         @Override
         public void onClick(View view) {

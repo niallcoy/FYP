@@ -64,19 +64,7 @@ public class SpoonacularService {
         RequestQueue queue = Volley.newRequestQueue(context);
         queue.add(request);
     }
-    public void getAllLunchRecipes(Response.Listener<JSONArray> listener, Response.ErrorListener errorListener) {
-        String apiUrl = "https://api.spoonacular.com/recipes/complexSearch?apiKey=" + API_KEY + "&type=main course&addRecipeInformation=true";
-        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, apiUrl, null,
-                new Response.Listener<JSONArray>() {
-                    @Override
-                    public void onResponse(JSONArray response) {
-                        listener.onResponse(response);
-                    }
-                }, errorListener);
 
-        RequestQueue queue = Volley.newRequestQueue(context);
-        queue.add(request);
-    }
     public void searchRecipesByCalories(int minCalories, int maxCalories, Response.Listener<JSONArray> successListener, Response.ErrorListener errorListener) {
         String url = "https://api.spoonacular.com/recipes/findByNutrients?minCalories=" + minCalories + "&maxCalories=" + maxCalories + "&type=breakfast&apiKey=" + API_KEY;
         JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null, successListener, errorListener);
@@ -92,39 +80,6 @@ public class SpoonacularService {
         RequestQueue queue = Volley.newRequestQueue(context);
         queue.add(request);
     }
-    public void searchAndGetLunchDetailsByCalories(int minCalories, int maxCalories, Response.Listener<JSONArray> listener, Response.ErrorListener errorListener) {
-        String apiUrl = "https://api.spoonacular.com/recipes/complexSearch?apiKey=" + API_KEY + "&minCalories=" + minCalories + "&maxCalories=" + maxCalories + "&number=10&type=main course&addRecipeInformation=true";
-
-        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, apiUrl, null,
-                new Response.Listener<JSONArray>() {
-                    @Override
-                    public void onResponse(JSONArray response) {
-                        JSONArray lunchRecipes = new JSONArray();
-                        try {
-                            for (int i = 0; i < response.length(); i++) {
-                                JSONObject recipe = response.getJSONObject(i);
-                                JSONObject lunchRecipe = new JSONObject();
-                                lunchRecipe.put("title", recipe.getString("title"));
-                                lunchRecipe.put("image", recipe.getString("image"));
-                                lunchRecipe.put("sourceUrl", recipe.getString("sourceUrl")); // Add the source URL
-                                lunchRecipes.put(lunchRecipe);
-                            }
-                            listener.onResponse(lunchRecipes);
-                        } catch (JSONException e) {
-                            errorListener.onErrorResponse(new VolleyError(e.getMessage()));
-                        }
-                    }
-                }, errorListener);
-
-        RequestQueue queue = Volley.newRequestQueue(context);
-        queue.add(request);
-    }
-
-
-
-
-
-
 
 
 }

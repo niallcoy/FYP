@@ -46,10 +46,14 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
     private ListView lunchListView;
     private LunchListAdapter lunchAdapter;
     public static ArrayList<LunchItem> lunchItems = new ArrayList<>();
-    public static WeekViewActivity currentInstance = null;
+    private ListView dinnerListView;
+    private DinnerListAdapter dinnerListAdapter;
+    public static ArrayList<DinnerItem> dinnerItems = new ArrayList<>();
     private FirebaseManager firebaseManager;
     private HashMap<LocalDate, ArrayList<BreakfastItem>> breakfastsMap;
     private HashMap<LocalDate, ArrayList<LunchItem>> lunchesMap;
+    private HashMap<LocalDate, ArrayList<DinnerItem>> dinnersMap;
+    public static WeekViewActivity currentInstance = null;
     private Context context;
     LocalDate selectedDate = CalendarUtils.selectedDate;
 
@@ -67,9 +71,15 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         lunchItems = new ArrayList<>(); // Initialize the lunchItems
         lunchAdapter = new LunchListAdapter(this, lunchItems, firebaseManager);
         lunchListView.setAdapter(lunchAdapter);
+        dinnerItems = new ArrayList<>();
+        dinnerListAdapter = new DinnerListAdapter(this, dinnerItems, firebaseManager);
+        dinnerListView.setAdapter(dinnerListAdapter);
+
         CalendarUtils.selectedDate = LocalDate.now();
         breakfastListView.setOnItemLongClickListener(this); // Set the OnItemLongClickListener for breakfasts
         lunchListView.setOnItemLongClickListener(this); // Set the OnItemLongClickListener for lunches
+        dinnerListView.setOnItemLongClickListener(this);
+
 
         currentInstance = this;
         retrieveMealData(); // Retrieve breakfast data for all dates user has inputted breakfasts into
@@ -95,6 +105,7 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         lunchesMap = new HashMap<>();
         breakfastListView = findViewById(R.id.breakfastList);
         lunchListView = findViewById(R.id.lunchList);
+        dinnerListView = findViewById(R.id.dinnerList);
         monthYearText = findViewById(R.id.MonthYearTV);
         calendarRecyclerView = findViewById(R.id.CalendarRecyclerView);
     }
@@ -120,6 +131,11 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         Intent intent = new Intent(this, LunchPopup.class);
         startActivityForResult(intent, REQUEST_CODE);
     }
+    public void NewDinner(View view) {
+        Intent intent = new Intent(this, DinnerPopup.class);
+        startActivityForResult(intent, REQUEST_CODE);
+    }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -130,9 +146,24 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
                 String selectedRecipe = data.getStringExtra("selectedRecipe");
                 String selectedCalories = data.getStringExtra("selectedCalories");
                 String selectedImageUrl = data.getStringExtra("selectedImageUrl");
-                addBreakfastToList(selectedRecipe, selectedCalories, selectedImageUrl);
+
+                String mealType = data.getStringExtra("mealType");
+                if (mealType != null) {
+                    switch (mealType) {
+                        case "breakfast":
+                            addBreakfastToList(selectedRecipe, selectedCalories, selectedImageUrl);
+                            break;
+                        case "lunch":
+                            addLunchToList(selectedRecipe, selectedCalories, selectedImageUrl);
+                            break;
+                        case "dinner":
+                            addDinnerToList(selectedRecipe, selectedCalories, selectedImageUrl);
+                            break;
+                    }
+                }
             }
         }
+
     }
 
     public void addBreakfastToList(String recipe, String calories, String imageUrl) {
@@ -174,6 +205,30 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         lunchesList.add(item);
         lunchAdapter.notifyDataSetChanged();
     }
+    public void addDinnerToList(String recipe, String calories, String imageUrl) {
+        String date = CalendarUtils.selectedDate.toString();
+        String combined = recipe + "|" + imageUrl + "|(" + calories + ")";
+
+        // Generate a random UUID for the id
+        String id = UUID.randomUUID().toString();
+
+        firebaseManager.saveDinnerForUser(CalendarUtils.selectedDate.toString(), recipe, imageUrl, calories);
+        DinnerItem item = new DinnerItem(recipe, imageUrl, calories);
+
+        // Add dinner item to the corresponding list in dinnersMap
+        ArrayList<DinnerItem> dinnersList = dinnersMap.get(CalendarUtils.selectedDate);
+        if (dinnersList == null) {
+            dinnersList = new ArrayList<>();
+            dinnersMap.put(CalendarUtils.selectedDate, dinnersList);
+        }
+        dinnersList.add(item);
+        dinnerListAdapter.notifyDataSetChanged();
+    }
+
+
+
+
+
 
 
     @Override
@@ -202,6 +257,24 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         lunchItems.clear();
         lunchItems.addAll(lunchesList);
         lunchAdapter.notifyDataSetChanged();
+
+        // Check if there are dinners for the selected date in dinnersMap
+        ArrayList<DinnerItem> dinnersList = null;
+        if (dinnersMap != null) {
+            dinnersList = dinnersMap.get(date);
+        }
+
+        if (dinnersList == null) {
+            dinnersList = new ArrayList<>();
+        }
+        dinnerItems.clear();
+        dinnerItems.addAll(dinnersList);
+
+        // Check if dinnerListAdapter is not null before calling notifyDataSetChanged()
+        if (dinnerListAdapter != null) {
+            dinnerListAdapter.notifyDataSetChanged();
+        }
+
 
         updateTotalCaloriesForSelectedDay(CalendarUtils.selectedDate);
 
@@ -263,6 +336,33 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
                             Log.e("DEBUG", "Invalid lunch data format: " + lunchSnapshot.getValue());
                         }
                     }
+                    // Retrieve dinner data
+                    DataSnapshot dinnerSnapshot = dateSnapshot.child("dinner");
+                    if (dinnerSnapshot.exists()) {
+                        try {
+                            String recipe = dinnerSnapshot.child("recipe").getValue(String.class);
+                            String imageUrl = dinnerSnapshot.child("imageUrl").getValue(String.class);
+                            String calories = dinnerSnapshot.child("calories").getValue(String.class);
+
+                            // Create a DinnerItem object and add it to the corresponding list in dinnersMap
+                            DinnerItem item = new DinnerItem(recipe, imageUrl, calories);
+                            LocalDate localDate = LocalDate.parse(date);
+                            if (dinnersMap == null) {
+                                dinnersMap = new HashMap<>();
+                            }
+                            ArrayList<DinnerItem> dinnersList = dinnersMap.get(localDate);
+
+
+                            if (dinnersList == null) {
+                                dinnersList = new ArrayList<>();
+                                dinnersMap.put(localDate, dinnersList);
+                            }
+                            dinnersList.add(item);
+                        } catch (ClassCastException e) {
+                            Log.e("DEBUG", "Invalid dinner data format: " + dinnerSnapshot.getValue());
+                        }
+                    }
+
                 }
                 updateBreakfastItemsList(); // Update the breakfastItems list
                 updateLunchItemsList(); // Update the lunchItems list
@@ -301,6 +401,16 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         lunchItems.clear();
         lunchItems.addAll(lunchesList);
         lunchAdapter.notifyDataSetChanged();
+    }
+
+    public void updateDinnerItemsList() {
+        ArrayList<DinnerItem> dinnersList = dinnersMap.get(CalendarUtils.selectedDate);
+        if (dinnersList == null) {
+            dinnersList = new ArrayList<>();
+        }
+        dinnerItems.clear();
+        dinnerItems.addAll(dinnersList);
+        dinnerListAdapter.notifyDataSetChanged();
     }
 
 
@@ -396,7 +506,50 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
 
                 }
             });
+        }else if (parent.getId() == R.id.dinnerList) {
+            // Get the clicked dinner item
+            DinnerItem item = dinnerItems.get(position);
+
+            // Get the date of the clicked item
+            LocalDate date = CalendarUtils.selectedDate;
+
+            // Get the Firebase reference to the corresponding dinner item
+            DatabaseReference dinnerRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+                    .child("meals").child(date.toString()).child("dinner").child(item.getRecipe());
+
+            dinnerRef.removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void unused) {
+                    Toast.makeText(context, "Dinner item deleted", Toast.LENGTH_SHORT).show();
+                    firebaseManager.deleteDinnerFromUser(date.toString());// Remove the dinner item from the user's meals list in Firebase
+                    updateDinnerItemsList();
+                    updateTotalCaloriesForSelectedDay(CalendarUtils.selectedDate);
+
+                    Log.d("FIREBASE", "Dinner item deleted successfully");
+
+                    // Remove the dinner item from the corresponding list in dinnersMap
+                    ArrayList<DinnerItem> dinnersList = dinnersMap.get(date);
+                    if (dinnersList != null) {
+                        if (dinnersList.remove(item)) { // Check if the item was removed from the list
+                            if (dinnersList.isEmpty()) {
+                                dinnersMap.remove(date);
+                            }
+                            dinnerItems.remove(position); // Remove the clicked dinner item from the list and notify the adapter
+                            dinnerListAdapter.notifyDataSetChanged();
+                        }
+
+                    }
+
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(context, "Failed to delete dinner item", Toast.LENGTH_SHORT).show();
+                    Log.e("FIREBASE", "Error deleting dinner item", e);
+                }
+            });
         }
+
         return true;
     }
 
@@ -413,10 +566,12 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
                 // Reset total calories to 0 before calculating it again
                 breakfastListAdapter.resetTotalCalories();
                 lunchAdapter.resetTotalCalories();
+                dinnerListAdapter.resetTotalCalories();
 
-                // Get total calories from breakfast and lunch adapters
+                // Get total calories from breakfast, lunch, and dinner adapters
                 totalCalories += breakfastListAdapter.getTotalCalories();
                 totalCalories += lunchAdapter.getTotalCalories();
+                totalCalories += dinnerListAdapter.getTotalCalories();
 
                 // Update the TextView with the total calories
                 TextView totalCalsTextView = findViewById(R.id.total_cals_text_view);
@@ -431,6 +586,7 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
 
         mealsRef.addListenerForSingleValueEvent(mealsListener);
     }
+
 
 
 

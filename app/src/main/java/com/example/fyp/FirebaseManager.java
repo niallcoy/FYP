@@ -64,5 +64,24 @@ public class FirebaseManager {
                 .child("meals").child(date).child("lunch");
         lunchRef.removeValue();
     }
+    public void saveDinnerForUser(String date, String recipe, String imageUrl, String calories) {
+        String userId = getCurrentUser().getUid();
+        DatabaseReference mealsRef = mDatabase.child("Users").child(userId).child("meals");
+
+        HashMap<String, String> mealData = new HashMap<>();
+        mealData.put("recipe", recipe);
+        mealData.put("imageUrl", imageUrl);
+        mealData.put("calories", calories);
+
+        mealsRef.child(date).child("dinner").setValue(mealData);
+    }
+
+    public void deleteDinnerFromUser(String date) {
+        String userId = mAuth.getCurrentUser().getUid();
+        DatabaseReference dinnerRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+                .child("meals").child(date).child("dinner");
+        dinnerRef.removeValue();
+    }
+
 
 }
