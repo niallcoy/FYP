@@ -3,4 +3,6 @@
     <string name="back"><![CDATA[<-]]></string>
     <string name="forward"><![CDATA[->]]></string>
     <string name="weekly">Weekly</string>
+    <string name="total_calories_format">Total Calories: %d</string>
+
 </resources>

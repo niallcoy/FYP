@@ -123,8 +123,9 @@ public class BreakfastPopup extends AppCompatActivity {
                                 recipes.add(recipe);
                             }
                             Intent intent = new Intent(BreakfastPopup.this, BreakfastRecipesListActivity.class);
-                            // Pass the WeekViewActivity instance to BreakfastRecipesListActivity
                             intent.putExtra("recipes", recipes.toString());
+                            intent.putExtra("minCalories", minCalories);
+                            intent.putExtra("maxCalories", maxCalories);
                             breakfastRecipesLauncher.launch(intent);
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -140,6 +141,7 @@ public class BreakfastPopup extends AppCompatActivity {
                 }
         );
     }
+
 
 
 }

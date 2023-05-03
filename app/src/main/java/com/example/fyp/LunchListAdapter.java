@@ -20,14 +20,21 @@ public class LunchListAdapter extends ArrayAdapter<LunchItem> {
     private Context context;
     private List<LunchItem> lunchItems;
     private FirebaseManager firebaseManager;
+    private int totalCalories;
 
     public LunchListAdapter(Context context, List<LunchItem> lunchItems, FirebaseManager firebaseManager) {
         super(context, 0, lunchItems);
         this.context = context;
         this.lunchItems = lunchItems;
         this.firebaseManager = firebaseManager;
-    }
+        // Initialize total calories to 0
+        totalCalories = 0;
 
+        // Calculate total calories for all items in the list
+        for (LunchItem item : lunchItems) {
+            totalCalories += Integer.parseInt(item.getCalories());
+        }
+    }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
@@ -53,9 +60,17 @@ public class LunchListAdapter extends ArrayAdapter<LunchItem> {
                         .setCancelable(false)
                         .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
-                                // Delete the item from the list and Firebase database
+                                // Delete the item from the Firebase database
+                                firebaseManager.deleteLunchFromUser(CalendarUtils.selectedDate.toString());
+                                WeekViewActivity activity = (WeekViewActivity) context;
+                                activity.updateLunchItemsList();
+                                activity.updateTotalCaloriesForSelectedDay(CalendarUtils.selectedDate);
+
+                                // Remove the item from the lunchItems list
                                 lunchItems.remove(lunchItem);
-                                firebaseManager.deleteLunchFromUser(CalendarUtils.selectedDate.toString(), lunchItem.getTitle());
+
+                                // Update the total calories and refresh the list
+                                resetTotalCalories();
                                 notifyDataSetChanged();
                                 Toast.makeText(context, "Lunch recipe deleted", Toast.LENGTH_SHORT).show();
                             }
@@ -80,15 +95,30 @@ public class LunchListAdapter extends ArrayAdapter<LunchItem> {
                 WeekViewActivity activity = (WeekViewActivity) context;
                 activity.addLunchToList(lunchItem.getTitle(), lunchItem.getCalories(), lunchItem.getImageUrl());
                 firebaseManager.saveLunchForUser(CalendarUtils.selectedDate.toString(), lunchItem.getTitle(), lunchItem.getCalories(), lunchItem.getImageUrl());
+                // Update the total calories
+                totalCalories += Integer.parseInt(lunchItem.getCalories());
             }
         });
-
 
         return convertView;
     }
 
-    public void setLunchItems(List<LunchItem> lunchItems) {
-        this.lunchItems = lunchItems;
+
+
+    public int getTotalCalories() {
+        return totalCalories;
+    }
+    public void resetTotalCalories() {
+        totalCalories = 0;
+
+        // Calculate total calories for all items in the list
+        for (int i = 0; i < getCount(); i++) {
+            LunchItem item = getItem(i);
+            totalCalories += Integer.parseInt(item.getCalories());
+        }
+
+        // Notify the adapter that the data has changed
         notifyDataSetChanged();
     }
+
 }

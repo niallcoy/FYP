@@ -37,12 +37,13 @@ public class FirebaseManager {
         mealsRef.child(date).child("breakfast").setValue(mealData);
     }
 
-    public void deleteBreakfastFromUser(String date, String recipe) {
+    public void deleteBreakfastFromUser(String date) {
         String userId = mAuth.getCurrentUser().getUid();
         DatabaseReference breakfastRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
-                .child("meals").child(date).child("breakfast").child(recipe.replace(".", "-"));
+                .child("meals").child(date).child("breakfast");
         breakfastRef.removeValue();
     }
+
 
 
     public void saveLunchForUser(String date, String recipe, String imageUrl, String calories) {
@@ -57,10 +58,11 @@ public class FirebaseManager {
         mealsRef.child(date).child("lunch").setValue(mealData);
     }
 
-    public void deleteLunchFromUser(String date, String recipe) {
+    public void deleteLunchFromUser(String date) {
         String userId = mAuth.getCurrentUser().getUid();
-        DatabaseReference breakfastRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
-                .child("meals").child(date).child("lunch").child(recipe.replace(".", "-"));
-        breakfastRef.removeValue();
+        DatabaseReference lunchRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+                .child("meals").child(date).child("lunch");
+        lunchRef.removeValue();
     }
+
 }

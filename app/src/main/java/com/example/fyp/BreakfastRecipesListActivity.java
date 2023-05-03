@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Response;
@@ -19,6 +20,9 @@ public class BreakfastRecipesListActivity extends AppCompatActivity implements R
     private RecyclerView recyclerView;
     private JSONArray recipesArray;
     private WeekViewActivity weekViewActivity;
+    private TextView textViewCaloriesRange;
+    private int minCalories;
+    private int maxCalories;
 
     public BreakfastRecipesListActivity() {
 
@@ -55,12 +59,8 @@ public class BreakfastRecipesListActivity extends AppCompatActivity implements R
 
                         weekViewActivity.addBreakfastToList(title, calories, imageUrl);
 
-                        Intent resultIntent = new Intent();
-                        resultIntent.putExtra("selectedRecipe", title);
-                        resultIntent.putExtra("selectedCalories", calories);
-                        resultIntent.putExtra("selectedImageUrl", imageUrl);
-                        setResult(Activity.RESULT_OK, resultIntent);
-                        finish();
+                        Intent intent = new Intent(BreakfastRecipesListActivity.this, WeekViewActivity.class);
+                        startActivity(intent);
 
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -79,15 +79,25 @@ public class BreakfastRecipesListActivity extends AppCompatActivity implements R
     }
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_breakfast_recipes_list);
 
+        // Get the min and max calories values from the intent extras
+        int minCalories = getIntent().getIntExtra("minCalories", 0);
+        int maxCalories = getIntent().getIntExtra("maxCalories", 0);
 
+        // Set the text for the textViewCaloriesRange TextView
+        textViewCaloriesRange = findViewById(R.id.text_calories_range);
+        textViewCaloriesRange.setText("Breakfasts between " + minCalories + " and " + maxCalories);
+
+        // Find the RecyclerView and set its layout manager
         recyclerView = findViewById(R.id.lunch_recipes_recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // Get the recipes array from the intent extras
         String recipesString = getIntent().getStringExtra("recipes");
         try {
             recipesArray = new JSONArray(recipesString);
@@ -101,8 +111,8 @@ public class BreakfastRecipesListActivity extends AppCompatActivity implements R
         // Create an instance of RecipeAdapter and set it as the adapter for the RecyclerView
         RecipeAdapter recipeAdapter = new RecipeAdapter(recipesArray, BreakfastRecipesListActivity.this, BreakfastRecipesListActivity.this);
         recyclerView.setAdapter(recipeAdapter);
-
     }
+
 
 
 }

@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+
+import java.util.Locale;
 import java.util.UUID;
 
 import android.view.View;
@@ -49,6 +51,8 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
     private HashMap<LocalDate, ArrayList<BreakfastItem>> breakfastsMap;
     private HashMap<LocalDate, ArrayList<LunchItem>> lunchesMap;
     private Context context;
+    LocalDate selectedDate = CalendarUtils.selectedDate;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,8 +76,10 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         updateBreakfastItemsList();
         updateLunchItemsList();
         setWeekView();
-    }
 
+        // Update the total calories after setting the week view
+        updateTotalCaloriesForSelectedDay(CalendarUtils.selectedDate);
+    }
 
     private void setWeekView() {
         monthYearText.setText(monthYearFromDate(CalendarUtils.selectedDate));
@@ -115,7 +121,6 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         startActivityForResult(intent, REQUEST_CODE);
     }
 
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -129,7 +134,6 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
             }
         }
     }
-
 
     public void addBreakfastToList(String recipe, String calories, String imageUrl) {
         String date = CalendarUtils.selectedDate.toString();
@@ -199,9 +203,11 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         lunchItems.addAll(lunchesList);
         lunchAdapter.notifyDataSetChanged();
 
+        updateTotalCaloriesForSelectedDay(CalendarUtils.selectedDate);
+
+
         setWeekView();
     }
-
 
     private void retrieveMealData() {
         String userId = firebaseManager.getCurrentUser().getUid();
@@ -270,7 +276,6 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         });
     }
 
-
     public void updateBreakfastItemsList() {
         if (breakfastsMap != null) {
             ArrayList<BreakfastItem> breakfasts = breakfastsMap.get(CalendarUtils.selectedDate);
@@ -288,7 +293,7 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         }
     }
 
-    private void updateLunchItemsList() {
+    public void updateLunchItemsList() {
         ArrayList<LunchItem> lunchesList = lunchesMap.get(CalendarUtils.selectedDate);
         if (lunchesList == null) {
             lunchesList = new ArrayList<>();
@@ -321,13 +326,16 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
 
             // Get the Firebase reference to the corresponding breakfast item
             DatabaseReference breakfastRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
-                    .child("meals").child(date.toString()).child("breakfast").child(item.getRecipe());
+                    .child("meals").child(date.toString()).child("breakfast").child(item.getTitle());
 
             breakfastRef.removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
                 public void onSuccess(Void unused) {
                     Toast.makeText(context, "Breakfast item deleted", Toast.LENGTH_SHORT).show();
-                    firebaseManager.deleteBreakfastFromUser(date.toString(), item.getRecipe()); // Remove the breakfast item from the user's meals list in Firebase
+                    firebaseManager.deleteBreakfastFromUser(date.toString());// Remove the breakfast item from the user's meals list in Firebase
+                    updateBreakfastItemsList();
+                    updateTotalCaloriesForSelectedDay(CalendarUtils.selectedDate);
+
                     Log.d("FIREBASE", "Breakfast item deleted successfully");
 
                     // Remove the breakfast item from the corresponding list in breakfastsMap
@@ -367,7 +375,10 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
                 @Override
                 public void onSuccess(Void unused) {
                     Toast.makeText(context, "Lunch item deleted", Toast.LENGTH_SHORT).show();
-                    firebaseManager.deleteLunchFromUser(date.toString(), item.getRecipe()); // Remove the lunch item from the user's meals list in Firebase
+                    firebaseManager.deleteLunchFromUser(date.toString());// Remove the lunch item from the user's meals list in Firebase
+                    updateLunchItemsList();
+                    updateTotalCaloriesForSelectedDay(CalendarUtils.selectedDate);
+
                     Log.d("FIREBASE", "Lunch item deleted successfully");
 
                     // Remove the lunch item from the corresponding list in lunchesMap
@@ -388,5 +399,39 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         }
         return true;
     }
-}
 
+
+    public void updateTotalCaloriesForSelectedDay(LocalDate selectedDate) {
+        String userId = firebaseManager.getCurrentUser().getUid();
+        DatabaseReference mealsRef = FirebaseDatabase.getInstance().getReference("Users").child(userId).child("meals").child(selectedDate.toString());
+
+        ValueEventListener mealsListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                int totalCalories = 0;
+
+                // Reset total calories to 0 before calculating it again
+                breakfastListAdapter.resetTotalCalories();
+                lunchAdapter.resetTotalCalories();
+
+                // Get total calories from breakfast and lunch adapters
+                totalCalories += breakfastListAdapter.getTotalCalories();
+                totalCalories += lunchAdapter.getTotalCalories();
+
+                // Update the TextView with the total calories
+                TextView totalCalsTextView = findViewById(R.id.total_cals_text_view);
+                totalCalsTextView.setText(String.format(Locale.getDefault(), "Total Calories: %d", totalCalories));
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w("FIREBASE", "Error fetching meals data.", databaseError.toException());
+            }
+        };
+
+        mealsRef.addListenerForSingleValueEvent(mealsListener);
+    }
+
+
+
+}
