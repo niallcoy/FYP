@@ -311,7 +311,7 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
                             }
                             breakfastsList.add(item);
                         } catch (ClassCastException e) {
-                            Log.e("DEBUG", "Invalid breakfast data format: " + breakfastSnapshot.getValue());
+                            Log.e("DEBUG" , "Invalid breakfast data format: " + breakfastSnapshot.getValue());
                         }
                     }
 
