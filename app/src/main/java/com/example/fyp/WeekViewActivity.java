@@ -11,9 +11,11 @@ import android.util.Log;
 import java.util.Locale;
 import java.util.UUID;
 
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,7 +38,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class WeekViewActivity extends AppCompatActivity implements CalendarAdapter.OnItemListener, AdapterView.OnItemLongClickListener {
+public class WeekViewActivity extends AppCompatActivity implements CalendarAdapter.OnItemListener, AdapterView.OnItemLongClickListener, PopupMenu.OnMenuItemClickListener {
     private TextView monthYearText;
     private RecyclerView calendarRecyclerView;
     static final int REQUEST_CODE = 1;
@@ -414,7 +416,7 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
     }
 
 
-    public void logout(View view) {
+    public void logout() {
         FirebaseAuth.getInstance().signOut(); // Sign out the user
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK); // Clear the activity stack
@@ -586,8 +588,30 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
 
         mealsRef.addListenerForSingleValueEvent(mealsListener);
     }
+    public void popUp(View v){
+        PopupMenu popUp = new PopupMenu(this, v);
+        popUp.setOnMenuItemClickListener(this);
+        popUp.inflate(R.menu.popup_menu);
+        popUp.show();
+    }
 
-
-
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.logout:
+                logout();
+                return true;
+            case R.id.searchRecipe:
+                Intent intent = new Intent(this, SearchRecipe.class);
+                startActivity(intent);
+                return true;
+            case R.id.weekView:
+                Intent intent1 = new Intent(this, WeekViewActivity.class);
+                startActivity(intent1);
+                return true;
+            default:
+                return false;
+        }
+    }
 
 }

@@ -10,15 +10,12 @@
     >
 
     <Button
-        android:id="@+id/logoutButton"
-        android:layout_width="wrap_content"
+        android:id="@+id/button2"
+        android:layout_width="46dp"
         android:layout_height="wrap_content"
-        android:background="@null"
-        android:onClick="logout"
-        android:text="Log out"
-        android:textColor="@color/blue"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:background="@android:color/transparent"
+        android:drawableLeft="@drawable/ic_baseline_menu_24"
+        android:onClick="popUp" />
 
     <Button
 

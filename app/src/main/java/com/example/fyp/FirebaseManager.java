@@ -11,6 +11,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class FirebaseManager {
     private FirebaseAuth mAuth;
@@ -81,6 +82,22 @@ public class FirebaseManager {
         DatabaseReference dinnerRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
                 .child("meals").child(date).child("dinner");
         dinnerRef.removeValue();
+    }
+
+    public void saveFavoriteMealForUser(String id, String title, List<String> ingredients, String imageUrl, int calories) {
+        String userId = getCurrentUser().getUid();
+        DatabaseReference mealsRef = mDatabase.child("Users").child(userId).child("meals");
+
+        // Create a HashMap to hold the meal data
+        HashMap<String, Object> mealData = new HashMap<>();
+        mealData.put("id", id);
+        mealData.put("title", title);
+        mealData.put("imageUrl", imageUrl);
+        mealData.put("calories", calories);
+        mealData.put("ingredients", ingredients);
+
+        // Save the favorite meal under the "favorites" node
+        mealsRef.child("favorites").child(id).setValue(mealData);
     }
 
 

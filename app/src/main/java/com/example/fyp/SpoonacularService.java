@@ -81,5 +81,22 @@ public class SpoonacularService {
         queue.add(request);
     }
 
+    public void searchAllRecipes(String query, Response.Listener<JSONArray> successListener, Response.ErrorListener errorListener) {
+        String url = "https://api.spoonacular.com/recipes/complexSearch?query=" + query + "&apiKey=" + API_KEY + "&addRecipeInformation=true";
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null, successListener, errorListener);
+        RequestQueue queue = Volley.newRequestQueue(context);
+        queue.add(request);
+    }
+    public void onResponse(JSONArray response) {
+        Log.d("API_RESPONSE", "Got Response: " + response.toString());
+
+    }
+
+    public void onErrorResponse(VolleyError error) {
+        Log.e("API_ERROR", "Error: " + error.toString());
+
+    }
+
+
 
 }
