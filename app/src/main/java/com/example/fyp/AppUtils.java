@@ -1,8 +1,9 @@
-package com.example.fyp.AppUtils;
+package com.example.fyp;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
@@ -12,6 +13,7 @@ import com.example.fyp.Profile;
 import com.example.fyp.R;
 import com.example.fyp.SearchRecipe;
 import com.example.fyp.WeekViewActivity;
+import com.example.fyp.Progress;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class AppUtils {
@@ -25,20 +27,31 @@ public class AppUtils {
     }
 
     public static void handleMenuItemClick(MenuItem item, Activity activity) {
+        Log.d("AppUtils", "handleMenuItemClick: Clicked item with id " + item.getItemId()); // Log item id
+
         switch(item.getItemId()) {
             case R.id.logout:
+                Log.d("AppUtils", "handleMenuItemClick: Logout selected");
                 logout(activity);
                 break;
             case R.id.searchRecipe:
+                Log.d("AppUtils", "handleMenuItemClick: SearchRecipe selected");
                 activity.startActivity(new Intent(activity, SearchRecipe.class));
                 break;
             case R.id.weekView:
+                Log.d("AppUtils", "handleMenuItemClick: WeekView selected");
                 activity.startActivity(new Intent(activity, WeekViewActivity.class));
                 break;
             case R.id.profile:
+                Log.d("AppUtils", "handleMenuItemClick: Profile selected");
                 activity.startActivity(new Intent(activity, Profile.class));
                 break;
+            case R.id.progress:
+                Log.d("AppUtils", "handleMenuItemClick: Progress selected");
+                activity.startActivity(new Intent(activity, Progress.class));
+                break;
             default:
+                Log.d("AppUtils", "handleMenuItemClick: Unknown item selected");
                 break;
         }
     }
