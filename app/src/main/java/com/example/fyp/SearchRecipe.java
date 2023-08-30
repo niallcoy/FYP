@@ -7,6 +7,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.PopupMenu;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -14,6 +16,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.example.fyp.AppUtils.AppUtils;
+import com.google.firebase.auth.FirebaseAuth;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,7 +26,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SearchRecipe extends AppCompatActivity {
+public class SearchRecipe extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener{
 
     private RecyclerView recipesRecyclerView;
     private SearchAdapter searchAdapter;
@@ -123,6 +127,16 @@ public class SearchRecipe extends AppCompatActivity {
         });
 
     }
+    public void popUp(View v) {
+        AppUtils.showPopUp(this, v, this);
+    }
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        AppUtils.handleMenuItemClick(item, this);
+        return true;
+    }
+
+
 
 }
 

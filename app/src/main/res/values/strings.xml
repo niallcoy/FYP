@@ -4,7 +4,10 @@
     <string name="forward"><![CDATA[->]]></string>
     <string name="weekly">Weekly</string>
     <string name="total_calories_format">Total Calories: %d</string>
-    <string name="name_age_format">%1$s, %2$s years old</string>
+    <string name="name_format"> %s</string>
+    <string name="age_format"> %s years old</string>
+    <string name="calorie_goal_format"> %s</string>
+
 
 
 </resources>

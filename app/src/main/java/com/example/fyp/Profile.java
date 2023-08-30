@@ -1,14 +1,18 @@
 package com.example.fyp; // Update with your package name
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.fyp.AppUtils.AppUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -16,9 +20,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-public class Profile extends AppCompatActivity {
+public class Profile extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener{
 
-    private TextView nameAgeTextView;
+    private TextView nameTextView, ageTextView, calorieGoalTextView;
     private EditText calorieGoalEditText;
     private Button saveButton;
 
@@ -30,7 +34,9 @@ public class Profile extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        nameAgeTextView = findViewById(R.id.nameAgeTextView);
+        nameTextView = findViewById(R.id.nameTextView);
+        ageTextView = findViewById(R.id.ageTextView);
+        calorieGoalTextView = findViewById(R.id.calorieGoalTextView);
         calorieGoalEditText = findViewById(R.id.calorieGoalEditText);
         saveButton = findViewById(R.id.saveButton);
 
@@ -48,7 +54,9 @@ public class Profile extends AppCompatActivity {
                             ? snapshot.child("calorieGoal").getValue().toString()
                             : "";
 
-                    nameAgeTextView.setText(getString(R.string.name_age_format, name, age));
+                    nameTextView.setText(getString(R.string.name_format, name));
+                    ageTextView.setText(getString(R.string.age_format, age));
+                    calorieGoalTextView.setText(getString(R.string.calorie_goal_format, calorieGoal));
 
                     calorieGoalEditText.setText(calorieGoal);
                 }
@@ -68,4 +76,15 @@ public class Profile extends AppCompatActivity {
             }
         });
     }
+
+    public void popUp(View v) {
+        AppUtils.showPopUp(this, v, this);
+    }
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        AppUtils.handleMenuItemClick(item, this);
+        return true;
+    }
+
+
 }
