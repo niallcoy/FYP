@@ -31,24 +31,24 @@
 
         <Button
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
+            android:background="@null"
+            android:onClick="PreviousWeekAction"
             android:text="@string/back"
             android:textColor="@color/blue"
-            android:background="@null"
-            android:textStyle="bold"
-            android:onClick="PreviousWeekAction"
-            android:textSize="20sp"/>
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/weekTextView"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="53dp"
             android:layout_weight="2"
             android:text="Week of YYYY-MM-DD"
-            android:textSize="20sp"
             android:textAlignment="center"
-            android:textColor="@color/black"/>
+            android:textColor="@color/black"
+            android:textSize="18sp" />
 
         <Button
             android:layout_width="0dp"
@@ -71,5 +71,22 @@
         android:text="Total Calories: "
         android:textColor="@color/black"
         android:textSize="18sp"/>
+
+    <TextView
+        android:id="@+id/weekly_calorie_goal_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Weekly calorie Goal: "
+        android:textColor="@color/black"
+        android:textSize="18sp"/>
+
+
+    <com.anychart.AnyChartView
+        android:id="@+id/any_chart_view"
+        android:layout_width="match_parent"
+        android:layout_height="300dp" />
+
+
+
 
 </LinearLayout>

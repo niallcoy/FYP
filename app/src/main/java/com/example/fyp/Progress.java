@@ -5,27 +5,38 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.fyp.R;
+import com.anychart.AnyChart;
+import com.anychart.AnyChartView;
+import com.anychart.chart.common.dataentry.DataEntry;
+import com.anychart.chart.common.dataentry.ValueDataEntry;
+import com.anychart.charts.Pie;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Progress extends AppCompatActivity  implements PopupMenu.OnMenuItemClickListener {
+public class Progress extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener {
 
     private TextView totalCaloriesTextView;
     private TextView weekTextView;
+    private TextView weeklyCalorieGoalTextView;
+    private AnyChartView anyChartView;
     private LocalDate startDate;
     private LocalDate endDate;
     private DatabaseReference mealsRef;
     private String userId;
+    private int weeklyCalorieGoal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +45,8 @@ public class Progress extends AppCompatActivity  implements PopupMenu.OnMenuItem
 
         totalCaloriesTextView = findViewById(R.id.total_cals_text_view);
         weekTextView = findViewById(R.id.weekTextView);
+        weeklyCalorieGoalTextView = findViewById(R.id.weekly_calorie_goal_text_view);
+        anyChartView = findViewById(R.id.any_chart_view);
 
         userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         mealsRef = FirebaseDatabase.getInstance().getReference("Users").child(userId).child("meals");
@@ -41,9 +54,50 @@ public class Progress extends AppCompatActivity  implements PopupMenu.OnMenuItem
         startDate = LocalDate.now().minusDays(LocalDate.now().getDayOfWeek().getValue() - 1); // Start of the week (Monday)
         endDate = startDate.plusDays(6); // End of the week (Sunday)
 
+        fetchAndCalculateWeeklyCalorieGoal();
         updateWeekView();
         updateTotalCaloriesForWeek();
     }
+
+    private void fetchAndCalculateWeeklyCalorieGoal() {
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(userId);
+        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String calorieGoal = snapshot.child("calorieGoal").getValue(String.class);
+                if (calorieGoal != null) {
+                    int dailyCalorieGoal = Integer.parseInt(calorieGoal);
+                    weeklyCalorieGoal = dailyCalorieGoal * 7;
+                    updateWeeklyCalorieGoalUI();
+                    updateTotalCaloriesForWeek();  // Move this call here
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Handle any errors that might occur during the database read
+            }
+        });
+    }
+
+
+    private void updateWeeklyCalorieGoalUI() {
+        weeklyCalorieGoalTextView.setText("Weekly Calorie Goal: " + weeklyCalorieGoal);
+    }
+
+    private void updatePieChart(int totalCalories) {
+        Pie pie = AnyChart.pie();
+
+        List<DataEntry> data = new ArrayList<>();
+        data.add(new ValueDataEntry("Total Calories", totalCalories));
+        data.add(new ValueDataEntry("Remaining", weeklyCalorieGoal - totalCalories));
+
+        pie.data(data);
+
+        anyChartView.setChart(pie);
+        pie.draw(true);
+    }
+
 
     public void NextWeekAction(View view) {
         startDate = startDate.plusWeeks(1);
@@ -72,49 +126,46 @@ public class Progress extends AppCompatActivity  implements PopupMenu.OnMenuItem
         mealsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String weekTotalCalories = "0";
+                int weekTotalCalories = 0;
                 for (DataSnapshot dateSnapshot : snapshot.getChildren()) {
                     String date = dateSnapshot.getKey();
                     if (isDateWithinWeek(date, start, end)) {
-                        // Extract and sum up the calories as strings
-                        String breakfastCalories = dateSnapshot.child("breakfast").child("calories").getValue(String.class);
-                        String lunchCalories = dateSnapshot.child("lunch").child("calories").getValue(String.class);
-                        String dinnerCalories = dateSnapshot.child("dinner").child("calories").getValue(String.class);
+                        // Extract and sum up the calories
+                        String breakfastCaloriesStr = dateSnapshot.child("breakfast").child("calories").getValue(String.class);
+                        String lunchCaloriesStr = dateSnapshot.child("lunch").child("calories").getValue(String.class);
+                        String dinnerCaloriesStr = dateSnapshot.child("dinner").child("calories").getValue(String.class);
 
-                        // Perform null checks
-                        breakfastCalories = (breakfastCalories != null) ? breakfastCalories : "0";
-                        lunchCalories = (lunchCalories != null) ? lunchCalories : "0";
-                        dinnerCalories = (dinnerCalories != null) ? dinnerCalories : "0";
+                        int breakfastCalories = (breakfastCaloriesStr != null) ? Integer.parseInt(breakfastCaloriesStr) : 0;
+                        int lunchCalories = (lunchCaloriesStr != null) ? Integer.parseInt(lunchCaloriesStr) : 0;
+                        int dinnerCalories = (dinnerCaloriesStr != null) ? Integer.parseInt(dinnerCaloriesStr) : 0;
 
-                        // Add them (you might want to convert them into integers to perform the addition)
-                        int totalForDay = Integer.parseInt(breakfastCalories) + Integer.parseInt(lunchCalories) + Integer.parseInt(dinnerCalories);
-                        int totalForWeek = Integer.parseInt(weekTotalCalories) + totalForDay;
-                        weekTotalCalories = String.valueOf(totalForWeek);
+
+                        weekTotalCalories += (breakfastCalories + lunchCalories + dinnerCalories);
                     }
                 }
 
-                // Update the UI
                 totalCaloriesTextView.setText("Total Calories for the Week: " + weekTotalCalories);
+                updatePieChart(weekTotalCalories);
             }
-
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-
+                // Handle any errors
             }
         });
     }
 
     private boolean isDateWithinWeek(String date, String startDate, String endDate) {
-        //  date comparison logic here
         LocalDate dateLD = LocalDate.parse(date);
         LocalDate startLD = LocalDate.parse(startDate);
         LocalDate endLD = LocalDate.parse(endDate);
         return (dateLD.isAfter(startLD) || dateLD.isEqual(startLD)) && (dateLD.isBefore(endLD) || dateLD.isEqual(endLD));
     }
+
     public void popUp(View v) {
         AppUtils.showPopUp(this, v, this);
     }
+
     @Override
     public boolean onMenuItemClick(MenuItem item) {
         AppUtils.handleMenuItemClick(item, this);
