@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class CalendarUtils {
     public static HashMap<LocalDate, ArrayList<BreakfastItem>> breakfastMap = new HashMap<>();
-
+    public static HashMap<LocalDate, Integer> totalCaloriesMap = new HashMap<>();  // New HashMap to store total calories
 
     public static LocalDate selectedDate;
 
@@ -24,12 +24,10 @@ public class CalendarUtils {
     }
 
     public static ArrayList<LocalDate> daysInMonth(LocalDate date) {
-
         ArrayList<LocalDate> daysInMonthArray = new ArrayList<>();
         YearMonth yearMonth = YearMonth.from(date);
 
         int daysInMonth = yearMonth.lengthOfMonth();
-
         LocalDate firstOfMonth = CalendarUtils.selectedDate.withDayOfMonth(1);
         int dayOfWeek = firstOfMonth.getDayOfWeek().getValue();
 
@@ -45,7 +43,6 @@ public class CalendarUtils {
     }
 
     public static ArrayList<LocalDate> daysToWeekArray(LocalDate selectedDate) {
-
         ArrayList<LocalDate> days = new ArrayList<>();
         LocalDate current = sundayForDate(selectedDate);
         LocalDate endDate = current.plusWeeks(1);
@@ -59,7 +56,6 @@ public class CalendarUtils {
     }
 
     private static LocalDate sundayForDate(LocalDate current) {
-
         LocalDate oneWeekAgo = current.minusWeeks(1);
 
         while (current.isAfter(oneWeekAgo)) {

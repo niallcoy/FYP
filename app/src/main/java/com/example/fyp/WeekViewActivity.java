@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -58,6 +59,8 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
     public static WeekViewActivity currentInstance = null;
     private Context context;
     LocalDate selectedDate = CalendarUtils.selectedDate;
+    private int calorieGoal;
+
 
 
     @Override
@@ -76,7 +79,7 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         dinnerItems = new ArrayList<>();
         dinnerListAdapter = new DinnerListAdapter(this, dinnerItems, firebaseManager);
         dinnerListView.setAdapter(dinnerListAdapter);
-
+        fetchCalorieGoal();
         CalendarUtils.selectedDate = LocalDate.now();
         breakfastListView.setOnItemLongClickListener(this); // Set the OnItemLongClickListener for breakfasts
         lunchListView.setOnItemLongClickListener(this); // Set the OnItemLongClickListener for lunches
@@ -88,6 +91,8 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         updateBreakfastItemsList();
         updateLunchItemsList();
         setWeekView();
+        fetchCalorieGoal();
+
 
         // Update the total calories after setting the week view
         updateTotalCaloriesForSelectedDay(CalendarUtils.selectedDate);
@@ -96,11 +101,16 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
     private void setWeekView() {
         monthYearText.setText(monthYearFromDate(CalendarUtils.selectedDate));
         ArrayList<LocalDate> days = daysToWeekArray(CalendarUtils.selectedDate);
-        CalendarAdapter calendarAdapter = new CalendarAdapter(days, this);
+        HashMap<LocalDate, Integer> totalCaloriesMap = CalendarUtils.totalCaloriesMap;
+
+        CalendarAdapter calendarAdapter = new CalendarAdapter(days, this, calorieGoal, totalCaloriesMap); // Added the fourth argument
+
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(getApplicationContext(), 7);
         calendarRecyclerView.setLayoutManager(layoutManager);
         calendarRecyclerView.setAdapter(calendarAdapter);
     }
+
+
 
     private void initWidgets() {
         breakfastsMap = new HashMap<>();
@@ -137,6 +147,72 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         Intent intent = new Intent(this, DinnerPopup.class);
         startActivityForResult(intent, REQUEST_CODE);
     }
+    private void fetchMealsAndCalculateTotalCalories() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            DatabaseReference reference = FirebaseDatabase.getInstance().getReference("Users").child(userId).child("meals");
+            reference.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot dateSnapshot : snapshot.getChildren()) {
+                        String date = dateSnapshot.getKey();
+                        LocalDate localDate = LocalDate.parse(date);
+                        int totalCaloriesForDate = 0;
+
+                        DataSnapshot breakfastSnapshot = dateSnapshot.child("breakfast");
+                        if (breakfastSnapshot.exists()) {
+                            String calories = breakfastSnapshot.child("calories").getValue(String.class);
+                            totalCaloriesForDate += Integer.parseInt(calories);
+                        }
+
+                        // Do the same for lunch and dinner...
+
+                        CalendarUtils.totalCaloriesMap.put(localDate, totalCaloriesForDate);
+                    }
+
+                    // Refresh your CalendarAdapter here
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    // Handle error
+                }
+            });
+        }
+    }
+
+    private void fetchCalorieGoal() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            DatabaseReference reference = FirebaseDatabase.getInstance().getReference("Users").child(userId).child("calorieGoal");
+            reference.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    if (snapshot.exists()) {
+                        try {
+                            calorieGoal = Integer.parseInt(snapshot.getValue(String.class));
+                            // Initialize the CalendarAdapter here or refresh it.
+                            setWeekView();
+
+                            // NEW: Fetch meals and calculate total calories for each date
+                            fetchMealsAndCalculateTotalCalories();
+                        } catch (NumberFormatException e) {
+                            // Handle exception: this means the string could not be parsed into an integer.
+                        }
+                    }
+                }
+
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    // Handle error
+                }
+            });
+        }
+    }
+
 
 
     @Override
@@ -578,6 +654,9 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
                 // Update the TextView with the total calories
                 TextView totalCalsTextView = findViewById(R.id.total_cals_text_view);
                 totalCalsTextView.setText(String.format(Locale.getDefault(), "Total Calories: %d", totalCalories));
+
+                // Update the totalCaloriesMap
+                CalendarUtils.totalCaloriesMap.put(selectedDate, totalCalories);
             }
 
             @Override
@@ -588,6 +667,7 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
 
         mealsRef.addListenerForSingleValueEvent(mealsListener);
     }
+
     public void popUp(View v){
         PopupMenu popUp = new PopupMenu(this, v);
         popUp.setOnMenuItemClickListener(this);
@@ -617,5 +697,7 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
                 return false;
         }
     }
+
+
 
 }

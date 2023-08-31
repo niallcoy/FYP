@@ -7,20 +7,23 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.RecyclerView.ViewHolder;
-
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class CalendarAdapter extends RecyclerView.Adapter<CalendarViewHolder> {
 
     private final ArrayList<LocalDate> days;
     private final OnItemListener onItemListener;
+    private int calorieGoal;
+    private final HashMap<LocalDate, Integer> totalCaloriesMap;  // Added this line
 
-    public CalendarAdapter(ArrayList<LocalDate> days, OnItemListener onItemListener) {
+    public CalendarAdapter(ArrayList<LocalDate> days, OnItemListener onItemListener, int calorieGoal, HashMap<LocalDate, Integer> totalCaloriesMap) {
         this.days = days;
         this.onItemListener = onItemListener;
+        this.calorieGoal = calorieGoal;
+        this.totalCaloriesMap = totalCaloriesMap;  // Added this line
     }
 
     @NonNull
@@ -29,33 +32,33 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarViewHolder> {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         View view = inflater.inflate(R.layout.calendar_cell, parent, false);
         ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
-        if(days.size() > 15) // month view
-        layoutParams.height = (int) (parent.getHeight() * 0.166666666);
+        if(days.size() > 15)
+            layoutParams.height = (int) (parent.getHeight() * 0.166666666);
         else
             layoutParams.height = (int) parent.getHeight();
         return new CalendarViewHolder(view, onItemListener, days);
-
     }
-
-
 
     @Override
     public void onBindViewHolder(@NonNull CalendarViewHolder holder, int position) {
         LocalDate date = days.get(position);
         if (date != null) {
             holder.dayOfMonth.setText(Integer.toString(date.getDayOfMonth()));
-            if (CalendarUtils.breakfastMap.containsKey(date)) {
-                ArrayList<BreakfastItem> breakfasts = CalendarUtils.breakfastMap.get(date);
-                String breakfastString = "";
-                for (BreakfastItem breakfast : breakfasts) {
-                    breakfastString += breakfast.getTitle() + " (" + breakfast.getCalories() + ")\n";
+
+            if (calorieGoal != -1) {
+                int totalCaloriesForDate = getTotalCaloriesForDate(date);
+
+                if (totalCaloriesForDate > 0) {
+                    int calorieDifference = Math.abs(totalCaloriesForDate - calorieGoal);
+
+                    if (calorieDifference <= 100) {
+                        holder.parentView.setBackgroundColor(Color.GREEN);
+                    } else if (calorieDifference >= 101 && calorieDifference <= 300) {
+                        holder.parentView.setBackgroundColor(Color.YELLOW);
+                    } else {
+                        holder.parentView.setBackgroundColor(Color.RED);
+                    }
                 }
-                holder.breakfastText.setText(breakfastString);
-            }
-            if (date.equals(CalendarUtils.selectedDate)) {
-                holder.parentView.setBackgroundResource(R.drawable.selected_date_background);
-            } else {
-                holder.parentView.setBackgroundResource(0);
             }
         }
     }
@@ -63,13 +66,18 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarViewHolder> {
 
     @Override
     public int getItemCount() {
-
         return days.size();
     }
 
     public interface OnItemListener {
         void onItemClick(int position, LocalDate date);
+    }
 
-
+    private int getTotalCaloriesForDate(LocalDate date) {
+        // Fetch the total calories for the date from the map
+        if (totalCaloriesMap.containsKey(date)) {
+            return totalCaloriesMap.get(date);
+        }
+        return 0;
     }
 }
