@@ -7,6 +7,9 @@
     <string name="name_format"> %s</string>
     <string name="age_format"> %s years old</string>
     <string name="calorie_goal_format"> %s</string>
+    <string name="current_weight_format"> %s KG</string>
+    <string name="weight_goal_format"> %s KG</string>
+
 
 
 </resources>

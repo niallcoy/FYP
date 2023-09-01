@@ -110,6 +110,14 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
         calendarRecyclerView.setAdapter(calendarAdapter);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        fetchCalorieGoal();
+
+    }
+
+
 
 
     private void initWidgets() {

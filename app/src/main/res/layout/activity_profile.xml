@@ -65,6 +65,7 @@
         app:layout_constraintTop_toBottomOf="@id/ageTitle"
         android:layout_marginTop="16dp"/>
 
+
     <TextView
         android:id="@+id/nameTextView"
         android:layout_width="wrap_content"
@@ -96,12 +97,76 @@
         android:id="@+id/calorieGoalEditText"
         android:layout_width="195dp"
         android:layout_height="41dp"
-        android:layout_marginTop="68dp"
-        android:hint="Enter Calorie Goal"
+        android:layout_marginTop="180dp"
+        android:hint="Update Calorie Goal"
         android:inputType="number"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/calorieGoalTitle" />
+
+    <TextView
+        android:id="@+id/currentWeightTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Current Weight (KG):"
+        android:textSize="18sp"
+        android:textColor="@color/black"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/calorieGoalTitle"/>
+
+    <TextView
+        android:id="@+id/currentWeightTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        app:layout_constraintStart_toEndOf="@id/currentWeightTitle"
+        app:layout_constraintTop_toTopOf="@id/currentWeightTitle"/>
+
+    <!-- Weight Goal TextViews and EditText -->
+
+    <EditText
+        android:id="@+id/currentWeightEditText"
+        android:layout_width="195dp"
+        android:layout_height="41dp"
+        android:layout_marginTop="60dp"
+        android:hint="Update Current Weight"
+        android:inputType="numberDecimal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/currentWeightTitle" />
+
+    <TextView
+        android:id="@+id/weightGoalTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Weight Goal (KG):"
+        android:textSize="18sp"
+        android:textColor="@color/black"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/currentWeightTitle"/>
+
+    <TextView
+        android:id="@+id/weightGoalTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        app:layout_constraintStart_toEndOf="@id/weightGoalTitle"
+        app:layout_constraintTop_toTopOf="@id/weightGoalTitle"/>
+
+    <EditText
+        android:id="@+id/weightGoalEditText"
+        android:layout_width="195dp"
+        android:layout_height="41dp"
+        android:layout_marginTop="64dp"
+        android:hint="Update Weight Goal"
+        android:inputType="numberDecimal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/weightGoalTitle" />
 
     <Button
         android:id="@+id/saveButton"
