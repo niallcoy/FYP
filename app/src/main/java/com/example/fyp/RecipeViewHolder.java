@@ -19,7 +19,7 @@ public class RecipeViewHolder extends RecyclerView.ViewHolder {
 
     // Method to bind data to the views
     public void bind(Recipe recipe, RecipeViewHolder.OnRecipeClickListener listener) {
-        recipeTitleTextView.setText(recipe.getTitle());
+        recipeTitleTextView.setText(recipe.getRecipe());
 
         addToFavoritesButton.setOnClickListener(new View.OnClickListener() {
             @Override

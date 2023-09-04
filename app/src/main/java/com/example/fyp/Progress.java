@@ -1,6 +1,7 @@
 package com.example.fyp;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
@@ -37,6 +38,7 @@ public class Progress extends AppCompatActivity implements PopupMenu.OnMenuItemC
     private DatabaseReference mealsRef;
     private String userId;
     private int weeklyCalorieGoal;
+    private int lastUpdatedCalories = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,37 +87,53 @@ public class Progress extends AppCompatActivity implements PopupMenu.OnMenuItemC
         weeklyCalorieGoalTextView.setText("Weekly Calorie Goal: " + weeklyCalorieGoal);
     }
 
-    private void updatePieChart(int totalCalories) {
-        Pie pie = AnyChart.pie();
 
+    private void updatePieChart(int totalCalories) {
+
+        if (lastUpdatedCalories == totalCalories) {
+            return;
+        }
+        lastUpdatedCalories = totalCalories; // Update the last known calorie count
+        Log.d("Debug", "Update Pie Chart called with totalCalories: " + totalCalories);
+        // Initialize the pie chart
+        Pie pie = AnyChart.pie();
+        // Prepare the data
         List<DataEntry> data = new ArrayList<>();
         data.add(new ValueDataEntry("Total Calories", totalCalories));
         data.add(new ValueDataEntry("Remaining", weeklyCalorieGoal - totalCalories));
-
+        // Set the data to the pie chart
         pie.data(data);
-
+        // Set the pie chart to the AnyChartView
         anyChartView.setChart(pie);
-        pie.draw(true);
+        // Invalidate the view to force a redraw
+        anyChartView.invalidate();
+        Log.d("ChartDebug", "updatePieChart: Total Calories: " + totalCalories);
     }
+
+
 
 
     public void NextWeekAction(View view) {
         startDate = startDate.plusWeeks(1);
         endDate = endDate.plusWeeks(1);
         updateWeekView();
-        updateTotalCaloriesForWeek();
+        fetchAndCalculateWeeklyCalorieGoal();
     }
 
     public void PreviousWeekAction(View view) {
         startDate = startDate.minusWeeks(1);
         endDate = endDate.minusWeeks(1);
         updateWeekView();
-        updateTotalCaloriesForWeek();
+        fetchAndCalculateWeeklyCalorieGoal();
     }
+
+
+
 
     private void updateWeekView() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         weekTextView.setText(String.format("%s to %s", startDate.format(formatter), endDate.format(formatter)));
+        updatePieChart(0);
     }
 
     private void updateTotalCaloriesForWeek() {

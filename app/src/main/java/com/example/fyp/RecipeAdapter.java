@@ -39,11 +39,15 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
             view = LayoutInflater.from(parent.getContext()).inflate(R.layout.lunch_recipe_item, parent, false);
         } else if (context instanceof DinnerRecipesListActivity) {
             view = LayoutInflater.from(parent.getContext()).inflate(R.layout.dinner_recipe_item, parent, false);
+        } else if (context instanceof SearchRecipe) {
+            view = LayoutInflater.from(parent.getContext()).inflate(R.layout.recipe_item, parent, false);
         } else {
             throw new IllegalStateException("Invalid context provided for RecipeAdapter");
         }
         return new ViewHolder(view, onRecipeClickListener);
     }
+
+
 
 
     @Override
@@ -89,7 +93,10 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
                 recipeImage = itemView.findViewById(R.id.dinner_recipe_image);
                 recipeTitle = itemView.findViewById(R.id.dinner_recipe_title);
                 recipeCalories = itemView.findViewById(R.id.dinner_recipe_calories);
-            } else {
+            } else if (itemView.findViewById(R.id.recipeImageView) != null) {
+                recipeTitle = itemView.findViewById(R.id.recipeTitleTextView);
+                recipeCalories = itemView.findViewById(R.id.recipeCaloriesTextView);
+            }else {
                 throw new IllegalStateException("Invalid layout provided for ViewHolder");
             }
             this.onRecipeClickListener = onRecipeClickListener;
@@ -116,5 +123,10 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.ViewHolder
         void onRecipeClick(int position);
         void onRecipeClick(int position, String title, String calories, String imageUrl);
     }
+    public void updateData(JSONArray jsonArray) {
+        this.recipesArray = jsonArray;
+        notifyDataSetChanged();
+    }
+
 
 }

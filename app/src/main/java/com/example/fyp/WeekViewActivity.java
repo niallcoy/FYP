@@ -701,6 +701,10 @@ public class WeekViewActivity extends AppCompatActivity implements CalendarAdapt
                 Intent intent2 = new Intent(this, Profile.class);
                 startActivity(intent2);
                 return true;
+            case R.id.favourites:
+                Intent intent3 = new Intent(this, ViewFavourites.class);
+                startActivity(intent3);
+                return true;
             default:
                 return false;
         }

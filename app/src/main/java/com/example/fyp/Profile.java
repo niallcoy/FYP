@@ -42,7 +42,7 @@ public class Profile extends AppCompatActivity implements PopupMenu.OnMenuItemCl
         calorieGoalEditText = findViewById(R.id.calorieGoalEditText);
         saveButton = findViewById(R.id.saveButton);
 
-        // Initialize new variables for current weight and weight goal
+
         currentWeightTextView = findViewById(R.id.currentWeightTextView);
         weightGoalTextView = findViewById(R.id.weightGoalTextView);
         currentWeightEditText = findViewById(R.id.currentWeightEditText);
@@ -74,13 +74,13 @@ public class Profile extends AppCompatActivity implements PopupMenu.OnMenuItemCl
                     ageTextView.setText(getString(R.string.age_format, age));
                     calorieGoalTextView.setText(getString(R.string.calorie_goal_format, calorieGoal));
 
-                    // New UI updates for current weight and weight goal
+                    // UI updates for current weight and weight goal
                     currentWeightTextView.setText(getString(R.string.current_weight_format, currentWeight));
                     weightGoalTextView.setText(getString(R.string.weight_goal_format, weightGoal));
 
                     calorieGoalEditText.setText(calorieGoal);
 
-                    // New EditText updates for current weight and weight goal
+                    // EditText updates for current weight and weight goal
                     currentWeightEditText.setText(currentWeight);
                     weightGoalEditText.setText(weightGoal);
                 }
@@ -97,13 +97,13 @@ public class Profile extends AppCompatActivity implements PopupMenu.OnMenuItemCl
             public void onClick(View v) {
                 String newCalorieGoal = calorieGoalEditText.getText().toString().trim();
 
-                // New data saving for current weight and weight goal
+                //  data saving for current weight and weight goal
                 String newCurrentWeight = currentWeightEditText.getText().toString().trim();
                 String newWeightGoal = weightGoalEditText.getText().toString().trim();
 
                 userRef.child("calorieGoal").setValue(newCalorieGoal);
 
-                // New Firebase updates for current weight and weight goal
+                //  Firebase updates for current weight and weight goal
                 userRef.child("currentWeight").setValue(newCurrentWeight);
                 userRef.child("weightGoal").setValue(newWeightGoal);
             }

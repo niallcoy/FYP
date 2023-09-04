@@ -17,13 +17,13 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarViewHolder> {
     private final ArrayList<LocalDate> days;
     private final OnItemListener onItemListener;
     private int calorieGoal;
-    private final HashMap<LocalDate, Integer> totalCaloriesMap;  // Added this line
+    private final HashMap<LocalDate, Integer> totalCaloriesMap;
 
     public CalendarAdapter(ArrayList<LocalDate> days, OnItemListener onItemListener, int calorieGoal, HashMap<LocalDate, Integer> totalCaloriesMap) {
         this.days = days;
         this.onItemListener = onItemListener;
         this.calorieGoal = calorieGoal;
-        this.totalCaloriesMap = totalCaloriesMap;  // Added this line
+        this.totalCaloriesMap = totalCaloriesMap;
     }
 
     @NonNull

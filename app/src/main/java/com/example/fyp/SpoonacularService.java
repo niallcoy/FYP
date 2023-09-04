@@ -21,6 +21,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SpoonacularService {
@@ -87,15 +89,56 @@ public class SpoonacularService {
         RequestQueue queue = Volley.newRequestQueue(context);
         queue.add(request);
     }
-    public void onResponse(JSONArray response) {
-        Log.d("API_RESPONSE", "Got Response: " + response.toString());
 
+    public void searchRecipesByQuery(String query, final Response.Listener<List<Recipe>> successListener, Response.ErrorListener errorListener) {
+        String url = "https://api.spoonacular.com/recipes/complexSearch?query=" + query + "&apiKey=" + API_KEY + "&addRecipeNutrition=true";
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            List<Recipe> recipes = new ArrayList<>();
+                            JSONArray resultsArray = response.getJSONArray("results");
+
+                            for (int i = 0; i < resultsArray.length(); i++) {
+                                JSONObject recipeObject = resultsArray.getJSONObject(i);
+                                String title = recipeObject.getString("title");
+                                String imageUrl = recipeObject.getString("image");
+                                int calories = 0;
+
+                                if (recipeObject.has("nutrition")) {
+                                    JSONObject nutrition = recipeObject.getJSONObject("nutrition");
+                                    JSONArray nutrients = nutrition.getJSONArray("nutrients");
+                                    for (int j = 0; j < nutrients.length(); j++) {
+                                        JSONObject nutrient = nutrients.getJSONObject(j);
+                                        if ("Calories".equals(nutrient.getString("name"))) {
+                                            calories = nutrient.getInt("amount");
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                Recipe recipe = new Recipe(title, imageUrl, calories);
+                                recipes.add(recipe);
+                            }
+
+                            successListener.onResponse(recipes);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            errorListener.onErrorResponse(new VolleyError("JSON Parsing Error"));
+                        }
+                    }
+                }, errorListener);
+
+        RequestQueue queue = Volley.newRequestQueue(context);
+        queue.add(request);
     }
 
-    public void onErrorResponse(VolleyError error) {
-        Log.e("API_ERROR", "Error: " + error.toString());
 
-    }
+
+
+
 
 
 

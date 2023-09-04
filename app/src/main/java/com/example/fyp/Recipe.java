@@ -1,12 +1,8 @@
 package com.example.fyp;
 
-import java.util.List;
-
 public class Recipe {
-    private String id;
-    private String title;
-    private List<String> ingredients;
-    private String instructions;
+
+    private String recipe;
     private String imageUrl;
     private int calories;
 
@@ -15,46 +11,20 @@ public class Recipe {
     }
 
     // Parameterized constructor
-    public Recipe(String id, String title, List<String> ingredients, String instructions, String imageUrl, int calories) {
-        this.id = id;
-        this.title = title;
-        this.ingredients = ingredients;
-        this.instructions = instructions;
+    public Recipe(String recipe, String imageUrl, int calories) {
+        this.recipe = recipe;
         this.imageUrl = imageUrl;
         this.calories = calories;
     }
 
-    // Getters and setters for each field
-    public String getId() {
-        return id;
+    // Getters and setters
+
+    public String getRecipe() {
+        return recipe;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public List<String> getIngredients() {
-        return ingredients;
-    }
-
-    public void setIngredients(List<String> ingredients) {
-        this.ingredients = ingredients;
-    }
-
-    public String getInstructions() {
-        return instructions;
-    }
-
-    public void setInstructions(String instructions) {
-        this.instructions = instructions;
+    public void setRecipe(String recipe) {
+        this.recipe = recipe;
     }
 
     public String getImageUrl() {
@@ -64,13 +34,12 @@ public class Recipe {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
     public int getCalories() {
         return calories;
     }
-    public void setCalories(int calories){
+
+    public void setCalories(int calories) {
         this.calories = calories;
     }
 }
-
-
-

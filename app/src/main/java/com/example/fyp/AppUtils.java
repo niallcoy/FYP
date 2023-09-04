@@ -50,6 +50,10 @@ public class AppUtils {
                 Log.d("AppUtils", "handleMenuItemClick: Progress selected");
                 activity.startActivity(new Intent(activity, Progress.class));
                 break;
+            case R.id.favourites:
+                Log.d("AppUtils", "handleMenuItemClick: ViewFavourites selected");
+                activity.startActivity(new Intent(activity, ViewFavourites.class));
+                break;
             default:
                 Log.d("AppUtils", "handleMenuItemClick: Unknown item selected");
                 break;

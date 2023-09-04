@@ -6,133 +6,114 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.PopupMenu;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.ArrayList;
 import java.util.List;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
-public class SearchRecipe extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener{
+public class SearchRecipe extends AppCompatActivity implements RecipeAdapter.OnRecipeClickListener {
 
-    private RecyclerView recipesRecyclerView;
-    private SearchAdapter searchAdapter;
-    private List<Recipe> recipesList;
+    private RecyclerView recyclerView;
+    private RecipeAdapter recipeAdapter;
+    private EditText searchEditText;
+    private Button searchButton;
 
+    // Initialize Firestore and FirebaseAuth instances
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private FirebaseAuth mAuth = FirebaseAuth.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_recipe);
 
-        // Initialize EditText, Button, and RecyclerView
-        EditText searchEditText = findViewById(R.id.searchEditText);
-        Button searchButton = findViewById(R.id.searchButton);
-        recipesRecyclerView = findViewById(R.id.recipesRecyclerView);
+        searchEditText = findViewById(R.id.searchEditText);
+        searchButton = findViewById(R.id.searchButton);
+        recyclerView = findViewById(R.id.recipesRecyclerView);
 
-        // Initialize the list and adapter
-        recipesList = new ArrayList<>();
-        searchAdapter = new SearchAdapter(recipesList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Set up the RecyclerView
-        recipesRecyclerView.setAdapter(searchAdapter);
-        recipesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        // Initialize the adapter with an empty JSONArray
+        //recipeAdapter = new RecipeAdapter(new JSONArray(), this);
+        recyclerView.setAdapter(recipeAdapter);
 
-        // Create an instance of SpoonacularService
         SpoonacularService spoonacularService = new SpoonacularService(this);
 
-        // Set the click listener for the search button
         searchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String searchQuery = searchEditText.getText().toString();
-
-                // Use the SpoonacularService instance to call searchAllRecipes
-                spoonacularService.searchAllRecipes(searchQuery, new Response.Listener<JSONArray>() {
+                String query = searchEditText.getText().toString();
+                spoonacularService.searchRecipesByQuery(query, new Response.Listener<List<Recipe>>() {
                     @Override
-                    public void onResponse(JSONArray response) {
-                        Log.d("API_RESPONSE", "Received JSON: " + response.toString());
-                        // Clear the existing list
-                        recipesList.clear();
-
-                        try {
-                            // Assume the API response is an object that contains an array under "results"
-                            JSONObject fullResponse = new JSONObject(response.toString());
-                            if (fullResponse.has("results")) {
-                                JSONArray resultsArray = fullResponse.getJSONArray("results");
-
-                                // Clear the existing list
-                                recipesList.clear();
-
-                                // Loop through the results and populate recipesList
-                                for (int i = 0; i < resultsArray.length(); i++) {
-                                    JSONObject recipeJson = resultsArray.getJSONObject(i);
-
-                                    if (recipeJson.has("id")) {
-                                        String id = recipeJson.getString("id");
-                                        String title = recipeJson.getString("title");
-                                        Log.d("API_RESPONSE", "Adding recipe: " + title);
-
-                                        int calories = recipeJson.getInt("calories"); // Assuming calories is an integer
-                                        String imageUrl = recipeJson.getString("image");
-
-                                        // Fetch ingredients as a List<String> (if they are available in this API response)
-                                        List<String> ingredients = new ArrayList<>();
-                                        if (recipeJson.has("ingredients")) {
-                                            JSONArray ingredientsArray = recipeJson.getJSONArray("ingredients");
-                                            for (int j = 0; j < ingredientsArray.length(); j++) {
-                                                JSONObject ingredientObject = ingredientsArray.getJSONObject(j);
-                                                String ingredient = ingredientObject.getString("name");
-                                                ingredients.add(ingredient);
-                                            }
-                                        }
-
-                                        // Create a new Recipe object and add it to recipesList
-                                        Recipe recipe = new Recipe(id, title, ingredients, "", imageUrl, calories);
-                                        recipesList.add(recipe);
-                                    }
-                                }
-
-                                // Refresh the RecyclerView
-                                searchAdapter.notifyDataSetChanged();
+                    public void onResponse(List<Recipe> recipes) {
+                        JSONArray jsonArray = new JSONArray();
+                        for (Recipe recipe : recipes) {
+                            JSONObject jsonObject = new JSONObject();
+                            try {
+                                //jsonObject.put("title", recipe.getTitle());
+                                jsonObject.put("image", recipe.getImageUrl());
+                                jsonObject.put("calories", recipe.getCalories());
+                                jsonArray.put(jsonObject);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
                             }
-
-                        } catch (JSONException e) {
-                            Log.e("JSON_PARSE_ERROR", "Error parsing JSON: " + e.getMessage());
-                            e.printStackTrace();
                         }
-
+                        recipeAdapter.updateData(jsonArray);
                     }
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e("API_ERROR", "Volley Error: " + error.toString());
-                        // Handle error, e.g., show a Toast message
+                        // Handle error here
                     }
                 });
             }
         });
 
+        // Sample code for adding a favorite recipe
+        Recipe recipe = new Recipe("Brussels Sprout Carbonara with Fettuccini", "https://spoonacular.com/recipeImages/636360-312x231.jpg", 549);
+        addFavorite(recipe);
     }
-    public void popUp(View v) {
-        AppUtils.showPopUp(this, v, this);
-    }
+
     @Override
-    public boolean onMenuItemClick(MenuItem item) {
-        AppUtils.handleMenuItemClick(item, this);
-        return true;
+    public void onRecipeClick(int position) {
+        // Handle click
+        // You can remove this if you implement the below method for handling clicks with more details
     }
 
+    @Override
+    public void onRecipeClick(int position, String title, String calories, String imageUrl) {
+        // Handle click with more details
+    }
 
+    public void addFavorite(Recipe recipe) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            db.collection("users")
+                    .document(userId)
+                    .collection("favorites")
+                    .add(recipe)
+                    .addOnSuccessListener(documentReference -> Log.d("Firestore", "DocumentSnapshot added with ID: " + documentReference.getId()))
+                    .addOnFailureListener(e -> Log.w("Firestore", "Error adding document", e));
+        } else {
+            Log.w("Firestore", "User not logged in");
+        }
+    }
+    //public void popUp(View v) {
+       // AppUtils.showPopUp(this, v, this);
+   // }
 
+//    @Override
+//    public boolean onMenuItemClick(MenuItem item) {
+//        AppUtils.handleMenuItemClick(item, this);
+//        return true;
+//    }
 }
-
